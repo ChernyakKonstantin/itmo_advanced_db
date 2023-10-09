@@ -43,7 +43,7 @@ class SensorAggregator:
 
         self.frequency = frequency
         self.n_sensors = n_sensors
-        self.sensors = [Sensor(self) for _ in range(self.n_sensors)]        
+        self.sensors = [Sensor() for _ in range(self.n_sensors)]        
         self.buffer = []
         self.lock = threading.Lock()
 
