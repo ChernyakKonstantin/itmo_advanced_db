@@ -1,1 +1,3 @@
 fire
+kafka-python
+numpy

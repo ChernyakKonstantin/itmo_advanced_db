@@ -1,68 +1,88 @@
-version: "3.5"
+version: "2"
+
 services:
   zookeeper:
     container_name: zookeeper
     image: confluentinc/cp-zookeeper:latest
     environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
+      - ZOOKEEPER_CLIENT_PORT=2181
+      - ZOOKEEPER_TICK_TIME=2000
     ports:
-      - 22181:2181
+      - "2181:2181"
+    networks:
+      - dev_network
 
   kafka:
     container_name: kafka
-    image: confluentinc/cp-kafka:latest
-    depends_on:
+    build:
+      context: images/kafka
+      dockerfile: Dockerfile.kafka
+    # any environment variable beginning with KAFKA_CFG_ will be mapped to its corresponding Apache Kafka key.
+    #  For example, use KAFKA_CFG_BACKGROUND_THREADS in order to set background.threads
+    links:
       - zookeeper
-    ports:
-      - 29092:29092
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-  
+      - KAFKA_CFG_NODE_ID=0
+      - ALLOW_PLAINTEXT_LISTENER=yes  # the listener will be without authentication and non-encrypted
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+    networks:
+      - dev_network
+    ports:
+      - "9093:9093"
+      - "9092:9092"
+    volumes:
+      - /Users/cherniak/itmo_study/advanced_db_project/docker/images/kafka/clickhouse_sink_connector.properties:/opt/bitnami/kafka/config/clickhouse_sink_connector.properties
+
   kafka-ui:
-      container_name: kafka-ui
-      image: provectuslabs/kafka-ui
-      ports:
-        - 8090:8080
-      restart: always
-      environment:
-        - KAFKA_CLUSTERS_0_NAME=local
-        - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:29092,kafka2:29093
-        - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
-      links:
-        - kafka
-        - zookeeper
-      
+    container_name: kafka-ui
+    image: provectuslabs/kafka-ui
+    restart: always
+    links:
+      - kafka
+      - zookeeper
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092,kafka2:9093
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+    ports:
+      - "8090:8080"
+    networks:
+      - dev_network
 
   sensor_data_generator:
     container_name: sensor_data_generator
     build:
       context: images
       dockerfile: Dockerfile.sensors
-
-    # environment:
-    # - TODO # RMW_IMPLEMENTATION=rmw_fastrtps_cpp
     networks:
       - dev_network
-    # ports:
-    #   - TODO  # "8765:8765"
-    entrypoint: /root/itmo_advanced_db/data_generator/run.sh
-  
-  # clickhouse:
-  #   container_name: clickhouse
-  #   image: TODO
-  #   environment:
-  #   - TODO # RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-  #   networks:
-  #     - dev_network
-  #   ports:
-  #     - TODO  # "8765:8765"
-  #   entrypoint: TODO # /root/repositories/run_foxybridge.sh
+    entrypoint: tail -F anything #/root/itmo_advanced_db/data_generator/run.sh
+    volumes:
+      - /Users/cherniak/itmo_study/advanced_db_project/data_generator:/root/data_generator
+    links:
+      - kafka
+
+  clickhouse-server:
+    container_name: clickhouse-server
+    image: clickhouse/clickhouse-server:latest
+    # container_name: clickhouse-server
+    volumes:
+      - /Users/cherniak/itmo_study/advanced_db_project/clickhouse_storage:/var/lib/clickhouse  # Clickhouse persistent storage.
+      - $PWD/clickhouse_initialization:/docker-entrypoint-initdb.d  # Directory with database initialization scripts.
+      - $PWD/clickhouse-server/config.xml:/etc/clickhouse-server/config.xml
+    links:
+      - zookeeper
+    environment:
+      - CLICKHOUSE_PASSWORD=12345 # Change this to your desired password
+      - CLICKHOUSE_KEEPER_MAP_PATH_PREFIX=test_keeper_map
+    ports:
+      - "8123:8123" # HTTP port
+      - "9000:9000" # Native client port
+      - "9009:9009" # Native replication port
+    networks:
+      - dev_network
 
 networks:
   dev_network:

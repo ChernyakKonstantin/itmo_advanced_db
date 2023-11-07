@@ -1,13 +1,15 @@
 # Use the official Python base image
 FROM python:3.9
 
-# Install data generator
-RUN cd /root && \
-    git clone https://github.com/ChernyakKonstantin/itmo_advanced_db.git && \
-    cd itmo_advanced_db/data_generator && \
-    git pull && \
-    pip install -r requirements.txt 
+RUN apt-get update && apt-get install net-tools && apt autoremove
 
-# Make sh-script executable
-RUN ["chmod", "+x", "root/itmo_advanced_db/data_generator/run.sh"]
+# # Install data generator
+# RUN cd /root && \
+#     git clone https://github.com/ChernyakKonstantin/itmo_advanced_db.git && \
+#     cd itmo_advanced_db/data_generator && \
+#     git pull && \
+#     pip install -r requirements.txt 
+
+# # Make sh-script executable
+# RUN ["chmod", "+x", "root/itmo_advanced_db/data_generator/run.sh"]
 

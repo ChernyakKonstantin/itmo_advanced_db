@@ -4,31 +4,10 @@ import datetime
 import random
 from fire import Fire
 import threading
+import numpy as np
+from kafka import KafkaProducer
 
-class Sensor:
-    def __init__(self, frequency: float = 1e-3):
-        """
-        
-        Parameters:
-        -----------
-        :param: frequency: Number of seconds between answering to request.
-        :type: float
-        """
-        self.frequency = frequency
-        self.sheduler = sched.scheduler(time.time, time.sleep)
 
-    def generate_data(self):
-        return (
-            datetime.datetime.fromtimestamp(time.time()), 
-            random.random(),
-        )
-    
-    def get_data(self):
-        # TODO: fix
-        # time.sleep(self.frequency)
-        return self.generate_data()
-
-        
 class SensorAggregator:
     def __init__(self, frequency: float = 3, n_sensors: int = 1000):
         """
@@ -43,11 +22,15 @@ class SensorAggregator:
 
         self.frequency = frequency
         self.n_sensors = n_sensors
-        self.sensors = [Sensor() for _ in range(self.n_sensors)]        
         self.buffer = []
         self.lock = threading.Lock()
-
-
+    
+    def generate_data(self):
+        timestamp = datetime.datetime.now().timestamp()
+        data = np.random.rand(self.n_sensors)
+        timestamps = np.full(self.n_sensors, timestamp)
+        
+    
     def poll(self):
         print("polling started")
         while True:
