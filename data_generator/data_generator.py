@@ -14,7 +14,7 @@ from pprint import pprint
 import random
 import sched
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 
 class Sensor:
@@ -47,7 +47,7 @@ class Sensor:
         self.maybe_start_failure()
                 
         sample = {
-            "timestamp": str(self.clock),
+            "timestamp": self.clock.timestamp(),
             "measurment": random.random() * 100,
         } 
         self.clock += self.delta
@@ -69,7 +69,7 @@ class Sensor:
 
 
 class SensorAggregator:
-    def __init__(self, frequency: float = 3, n_sensors: int = 10):
+    def __init__(self, frequency: float = 3, n_sensors: int = 5, topic_name: Optional[str] = "sensors_data"):
         """
 
         Parameters:
@@ -83,16 +83,25 @@ class SensorAggregator:
 
         self.frequency = frequency
         self.n_sensors = n_sensors
+        self.topic_name = topic_name
         
-        self.sensors = {f"sensor_{i}": Sensor(start) for i in range(self.n_sensors)}
+        self.sensors = [Sensor(start) for i in range(self.n_sensors)]
         self.buffer = defaultdict(list)
+        
+        self.kafka_producer  = KafkaProducer(
+            # Добавить список возможных адрессов кафки (кафка1, кафка2 и т.д.). И тогда продьюсер будет пробовать их писать.
+            # Либо указать bootstrap servers - но это тоже несоклько среверов, т.к. что можно остановаиться на списке возмодных серверов.
+            bootstrap_servers=["kafka:9092"],  # TODO: How should I dynamically set address if I have several kafka brokers?
+            value_serializer=lambda x: json.dumps(x).encode("ascii"),
+            retries=5,
+        )
     
     def poll(self):
         print("polling started")
         while True:
-            for sensor_name, sensor in self.sensors.items():
+            for sensor_id, sensor in enumerate(self.sensors):
                 try:
-                    self.buffer[sensor_name].extend(next(sensor))
+                    self.buffer[sensor_id].extend(next(sensor))
                 except TimeoutError:
                     pass
                 
@@ -102,11 +111,12 @@ class SensorAggregator:
         # print(id(to_send), id(self.buffer))
         self.buffer = defaultdict(list)
         # print(id(to_send), id(self.buffer))
-        
-        pprint({k: len(v) for k, v in to_send.items()})
-        print()
+        for sensor_id, sensor_samples in to_send.items():
+            print(sensor_id, len(sensor_samples))
+            for sample in sensor_samples:
+                record = {"sensor_id": sensor_id, **sample}
+                self.kafka_producer.send(self.topic_name, record)
 
-    
     def run(self):
         polling_thread = threading.Thread(target=self.poll, daemon=True)
         polling_thread.start()
