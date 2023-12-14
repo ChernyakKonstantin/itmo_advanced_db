@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>{% block title %} Request defenition {% endblock %}</h1>
+    <form method="post">
+        <label for="sensors">Specify sensors</label>
+        <br>
+        <input type="text" name="sensors"
+               placeholder="1, 2, 5, 10"
+               value="{{ request.form['sensors'] }}"></input>
+        <br>
+        <label for="start">Specify start</label>
+        <br>
+        <input type="text" name="start"
+               placeholder="2023-10-01 12:11:10"
+               value="{{ request.form['start'] }}"></input>
+        <br>
+        <label for="end_or_dur">Specify end or duration</label>
+        <br>
+        <input type="text" name="end_or_dur"
+               placeholder="2023-10-01 13:11:10 or 10s or 1h"
+               value="{{ request.form['end_or_dur'] }}"></input>
+        <br>
+        <button type="submit">Submit</button>
+    </form>
+
+{% endblock %}
