@@ -21,6 +21,7 @@ services:
     #  For example, use KAFKA_CFG_BACKGROUND_THREADS in order to set background.threads
     links:
       - zookeeper
+      - clickhouse-server
     environment:
       - KAFKA_CFG_NODE_ID=0
       - ALLOW_PLAINTEXT_LISTENER=yes  # the listener will be without authentication and non-encrypted
@@ -34,6 +35,8 @@ services:
       - "9092:9092"
     volumes:
       - /Users/cherniak/itmo_study/advanced_db_project/docker/images/kafka/clickhouse_sink_connector.properties:/opt/bitnami/kafka/config/clickhouse_sink_connector.properties
+    # entrypoint: /opt/bitnami/kafka/bin/connect-standalone.sh /opt/bitnami/kafka/config/connect-standalone.properties /opt/bitnami/kafka/config/clickhouse_sink_connector.properties
+
 
   kafka-ui:
     container_name: kafka-ui
@@ -66,8 +69,7 @@ services:
 
   clickhouse-server:
     container_name: clickhouse-server
-    image: clickhouse/clickhouse-server:latest
-    # container_name: clickhouse-server
+    image: clickhouse/clickhouse-server:latest  # 23.11.2.11 version
     volumes:
       - /Users/cherniak/itmo_study/advanced_db_project/clickhouse_storage:/var/lib/clickhouse  # Clickhouse persistent storage.
       - $PWD/clickhouse_initialization:/docker-entrypoint-initdb.d  # Directory with database initialization scripts.

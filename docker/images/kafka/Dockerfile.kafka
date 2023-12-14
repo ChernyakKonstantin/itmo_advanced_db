@@ -1,5 +1,5 @@
 # Use the official Python base image
 FROM bitnami/kafka:latest
 
-COPY clickhouse-kafka-connect-v1.0.2-confluent.jar  /opt/bitnami/kafka/libs
+COPY clickhouse-kafka-connect-v1.0.10-confluent.jar  /opt/bitnami/kafka/libs
 COPY clickhouse_sink_connector.properties /opt/bitnami/kafka/config
