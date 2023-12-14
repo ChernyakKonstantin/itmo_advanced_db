@@ -1,0 +1,1 @@
+From docker compose to kubernetes: https://kubernetes.io/docs/tasks/configure-pod-container/translate-compose-kubernetes/
