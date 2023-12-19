@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lenses-deployment
+  namespace: kchernjak-338571
+  labels:
+    app: lenses
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lenses
+  template:
+    metadata:
+      labels:
+        app: lenses
+    spec:
+      containers:
+      - name: lenses
+        image: kainrehck/advanced_db:lenses
+        imagePullPolicy: IfNotPresent
+        command: ["flask"]
+        args: ["--app=lenses", "run", "--host=0.0.0.0", "--port=5432", "--no-debug"]
+        ports:
+        - containerPort: 5432
+        env:
+        - name: CLICKHOUSE_HOST
+          value: clickhouse-server
+        resources:
+          requests:
+            cpu: "1"
+            memory: "1Gi"
+          limits:
+            cpu: "1"
+            memory: "1Gi"

@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: sensor_data_generator-deployment
+#  namespace: null
+ labels:
+   app: sensor_data_generator
+
+spec:
+ replicas: 1
+ selector:
+   matchLabels:
+     app: sensor_data_generator
+  # strategy:
+  #   type: Recreate
+ template:
+   metadata:
+     labels:
+       app: sensor_data_generator
+   spec:
+     containers:
+     - name: sensor_data_generator
+      #  image: nginx:1.14.2
