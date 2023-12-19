@@ -1,4 +1,4 @@
 Flask
 matplotlib
 pandas
-clickhoise-connect
+clickhouse-connect
