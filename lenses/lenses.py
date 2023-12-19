@@ -1,38 +1,44 @@
+import base64
 import io
-import random
-from flask import Response, Flask, render_template, redirect, url_for, request
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from matplotlib.figure import Figure
-import json
+
+from flask import Flask, redirect, render_template, request, url_for
+
+from backend import Backend
+from error_codes import BackendErrors
+
+backend = Backend()
 
 app = Flask(__name__)
 
 
-
-@app.route('/', methods=('GET', 'POST'))
+@app.route("/", methods=("GET", "POST"))
 def index():
     if request.method == "POST":
-        sensors = request.form['sensors']
-        start = request.form['start']
-        end_or_dur = request.form['end_or_dur']
-        return redirect(url_for('result'))
-    return render_template('index.html')
+        url = url_for(
+            "result",
+            sensors=request.form["sensors"],
+            start=request.form["start"],
+            end_or_duration=request.form["end_or_dur"],
+        )
+        return redirect(url)
+    return render_template("index.html")
 
-@app.route('/result')
+
+@app.route("/result")
 def result():
-    return render_template('result.html')
+    backend_response = backend.get_result(
+        request.args.get("sensors"),
+        request.args.get("start"),
+        request.args.get("end_or_duration"),
+    )
 
-@app.route('/plot.png')
-def plot_png():
-    fig = create_figure()
-    output = io.BytesIO()
-    FigureCanvas(fig).print_png(output)
-    return Response(output.getvalue(), mimetype='image/png')
-
-def create_figure():
-    fig = Figure()
-    axis = fig.add_subplot(1, 1, 1)
-    xs = range(100)
-    ys = [random.randint(1, 50) for x in xs]
-    axis.plot(xs, ys)
-    return fig
+    if isinstance(backend_response, io.BytesIO):
+        return render_template("result.html", chart=base64.b64encode(backend_response.getvalue()).decode("utf-8"))
+    elif backend_response == BackendErrors.WRONG_SENSOR_LIST:
+        pass
+    elif backend_response == BackendErrors.WRONG_START_TIMESTAMP:
+        pass
+    elif backend_response == BackendErrors.WRONG_END_TIMESTAMP:
+        pass
+    elif backend_response == BackendErrors.NO_DATA:
+        pass
