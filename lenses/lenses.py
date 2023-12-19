@@ -1,4 +1,5 @@
 import base64
+import os
 import io
 
 from flask import Flask, redirect, render_template, request, url_for
@@ -6,7 +7,7 @@ from flask import Flask, redirect, render_template, request, url_for
 from backend import Backend
 from error_codes import BackendErrors
 
-backend = Backend()
+backend = Backend(os.environ["CLICKHOUSE_HOST"] if "CLICKHOUSE_HOST" in os.environ else  "localhost")
 
 app = Flask(__name__)
 

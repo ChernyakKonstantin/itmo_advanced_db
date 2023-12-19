@@ -8,7 +8,8 @@ from parsers import is_ts, parse_duration, parse_sensors, parse_ts
 
 
 class Backend:
-    def __init__(self):
+    def __init__(self, db_host: str = "localhost"):
+        self.db_host = db_host
         self.drawer = PngDrawer()
 
     def get_result(self, sensors: str, start: str, end_or_duration: str) -> Union[io.BytesIO, BackendErrors]:
@@ -31,7 +32,7 @@ class Backend:
         except Exception as e:
             print(e)  # TODO: Move to logging
             return BackendErrors.WRONG_END_TIMESTAMP
-        with ClickHouseClient() as clickhouse_client:  # TODO: Set correct data
+        with ClickHouseClient(host=self.db_host) as clickhouse_client:  # TODO: Set correct data
             sensor_data = clickhouse_client.get_data(sensors, start, end)
         if len(sensor_data) == 0:
             return BackendErrors.NO_DATA

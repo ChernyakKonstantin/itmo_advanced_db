@@ -38,22 +38,6 @@ services:
     # entrypoint: /opt/bitnami/kafka/bin/connect-standalone.sh /opt/bitnami/kafka/config/connect-standalone.properties /opt/bitnami/kafka/config/clickhouse_sink_connector.properties
 
 
-  kafka-ui:
-    container_name: kafka-ui
-    image: provectuslabs/kafka-ui
-    restart: always
-    links:
-      - kafka
-      - zookeeper
-    environment:
-      - KAFKA_CLUSTERS_0_NAME=local
-      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092,kafka2:9093
-      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
-    ports:
-      - "8090:8080"
-    networks:
-      - dev_network
-
   sensor_data_generator:
     container_name: sensor_data_generator
     build:
@@ -85,6 +69,19 @@ services:
       - "9009:9009" # Native replication port
     networks:
       - dev_network
+
+  lenses:
+    container_name: lenses
+    build:
+      context: ../
+      dockerfile: docker/images/Dockerfile.lenses
+    environment:
+      - CLICKHOUSE_HOST=clickhouse-server
+    networks:
+      - dev_network
+    ports:
+      - "5432:5432"
+    entrypoint: flask --app lenses run --host 0.0.0.0 --port 5432 --no-debug
 
 networks:
   dev_network:

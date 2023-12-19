@@ -1,0 +1,6 @@
+# Use the official Python base image
+FROM python:3.9
+
+COPY lenses/ /root/lenses
+WORKDIR /root/lenses
+RUN pip install -r requirements.txt
