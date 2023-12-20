@@ -1,0 +1,167 @@
+# Based on https://habr.com/ru/companies/smi2/articles/317682/
+# Based on https://clickhouse.com/docs/en/architecture/replication
+# Based on https://github.com/BigKAA/youtube/blob/master/statefulSet%20pods%20individual%20configs/01-op-cm.yaml
+# Based on https://kb.altinity.com/altinity-kb-setup-and-maintenance/altinity-kb-server-config-files/
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clickhouse-server
+  namespace: kchernjak-338571
+data:
+  remote-servers.xml: |
+    <clickhouse>
+        <remote_servers replace="true">
+            <secret>mysecretphrase</secret>
+            <sensor_data_cluster_2S_2R>
+                <!-- shard 01 -->
+                <shard>
+                    <internal_replication>true</internal_replication>
+                    <!-- replica 01_01 -->
+                    <replica>
+                        <host>clickhouse-server-0</host>
+                    </replica>
+
+                    <!-- replica 01_02 -->
+                    <replica>
+                        <host>clickhouse-server-1</host>
+                    </replica>
+                </shard>
+
+                <!-- shard 02 -->
+                <shard>
+                    <internal_replication>true</internal_replication>
+                    <!-- replica 02_01 -->
+                    <replica>
+                        <host>clickhouse-server-2</host>
+                    </replica>
+
+                    <!-- replica 02_02 -->
+                    <replica>
+                        <host>clickhouse-server-3</host>
+                    </replica>
+                </shard>
+            </sensor_data_cluster_2S_2R>
+        </remote_servers>
+    </clickhouse>
+
+  use-keeper.xml: |
+    <clickhouse>
+        <zookeeper>
+            <!-- where are the ZK nodes -->
+            <node>
+                <host>clickhouse-keeper-0</host>
+                <port>9181</port>
+            </node>
+            <node>
+                <host>clickhouse-keeper-1</host>
+                <port>9181</port>
+            </node>
+            <node>
+                <host>clickhouse-keeper-2</host>
+                <port>9181</port>
+            </node>
+        </zookeeper>
+    </clickhouse>
+
+  logging.xml: |
+    <clickhouse>
+        <logger>
+            <level>debug</level>
+            <log>/var/log/clickhouse-server/clickhouse-server.log</log>
+            <errorlog>/var/log/clickhouse-server/clickhouse-server.err.log</errorlog>
+            <size>1000M</size>
+            <count>3</count>
+        </logger>
+    </clickhouse>  
+  
+  networking.xml: |
+    <clickhouse>
+        <listen_host>0.0.0.0</listen_host>
+        <http_port>8123</http_port>
+        <tcp_port>9000</tcp_port>
+    </clickhouse>
+
+  display_name-0.xml: |
+    <clickhouse>
+        <display_name>sensor_data_cluster_2S_2R node 0</display_name>
+    </clickhouse>
+
+  display_name-1.xml: |
+    <clickhouse>
+        <display_name>sensor_data_cluster_2S_2R node 1</display_name>
+    </clickhouse>
+
+  display_name-2.xml: |
+    <clickhouse>
+        <display_name>sensor_data_cluster_2S_2R node 2</display_name>
+    </clickhouse>
+
+  display_name-3.xml: |
+    <clickhouse>
+        <display_name>sensor_data_cluster_2S_2R node 3</display_name>
+    </clickhouse>
+
+  macros-0.xml: |
+    <clickhouse>
+        <macros>
+            <shard>01</shard>
+            <replica>01</replica>
+            <cluster>sensor_data_cluster_2S_2R</cluster>
+        </macros>
+    </clickhouse>
+
+  macros-1.xml: |
+    <clickhouse>
+        <macros>
+            <shard>01</shard>
+            <replica>02</replica>
+            <cluster>sensor_data_cluster_2S_2R</cluster>
+        </macros>
+    </clickhouse>
+
+  macros-2.xml: |
+    <clickhouse>
+        <macros>
+            <shard>02</shard>
+            <replica>01</replica>
+            <cluster>sensor_data_cluster_2S_2R</cluster>
+        </macros>
+    </clickhouse>
+
+  macros-3.xml: |
+    <clickhouse>
+        <macros>
+            <shard>02</shard>
+            <replica>02</replica>
+            <cluster>sensor_data_cluster_2S_2R</cluster>
+        </macros>
+    </clickhouse>
+
+  # TODO: add database initialization script (on node 0?) at /var/tmp/database-initialization
+  conf.sh: |
+    echo $POD
+
+    mkdir -p /var/tmp/configs/
+    mkdir -p /var/tmp/database-initialization/
+    
+    cp tmp/remote-servers.xml /var/tmp/configs/remote-servers.xml
+    cp tmp/use-keeper.xml /var/tmp/configs/use-keeper.xml
+    cp tmp/logging.xml /var/tmp/configs/logging.xml
+    cp tmp/networking.xml /var/tmp/configs/networking.xml
+
+    if [ "$POD" == "clickhouse-server-0" ]; then
+      cp tmp/display_name-0.xml /var/tmp/configs/display_name.xml
+      cp tmp/macros-0.xml /var/tmp/configs/macros.xml
+    elif [ "$POD" == "clickhouse-server-1" ]; then
+      cp tmp/display_name-1.xml /var/tmp/configs/display_name.xml
+      cp tmp/macros-1.xml /var/tmp/configs/macros.xml
+    elif [ "$POD" == "clickhouse-server-2" ]; then
+      cp tmp/display_name-2.xml /var/tmp/configs/display_name.xml
+      cp tmp/macros-2.xml /var/tmp/configs/macros.xml
+    elif [ "$POD" == "clickhouse-server-3" ]; then
+      cp tmp/display_name-3.xml /var/tmp/configs/display_name.xml
+      cp tmp/macros-3.xml /var/tmp/configs/macros.xml
+    fi
+
+    echo Success
