@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: lenses-deployment
+  name: lenses
   namespace: kchernjak-338571
   labels:
     app: lenses
