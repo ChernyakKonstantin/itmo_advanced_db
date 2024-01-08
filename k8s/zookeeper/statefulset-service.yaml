@@ -1,0 +1,103 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: zookeeper-service
+  namespace: kchernjak-338571
+  labels:
+    app: zookeeper
+spec:
+  selector:
+    app: zookeeper
+  clusterIP: "None"
+  ports:
+  - port: 2181
+    name: client
+  - port: 2888
+    name: server
+  - port: 3888
+    name: leader-election
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: zookeeper
+  namespace: kchernjak-338571
+spec:
+  serviceName: "zookeeper-service"
+  selector:
+    matchLabels:
+      app: zookeeper
+  replicas: 1 # 3
+  template:
+    metadata:
+      labels:
+        app: zookeeper
+    spec:
+      containers:
+      - name: kubernetes-zookeeper
+        imagePullPolicy: IfNotPresent
+        image: confluentinc/cp-zookeeper:latest
+        env:
+        # - name: ZOOKEEPER_SERVER_ID
+        #   value: "0"  # TODO: Need to be configureds as +1
+        - name: ZOOKEEPER_TICK_TIME
+          value: "2000"
+        - name: ZOOKEEPER_DATA_DIR
+          value: /var/lib/zookeeper/data
+        - name: ZOOKEEPER_INIT_LIMIT
+          value: "20"
+        - name: ZOOKEEPER_SYNC_LIMIT
+          value: "5"
+        - name: ZOOKEEPER_CLIENT_PORT
+          value: "2181"
+        - name: ZOOKEEPER_SERVER_1
+          value: "zookeeper-0.zookeeper-service:2888:3888"
+        # - name: ZOOKEEPER_SERVER_2
+        #   value: "zookeeper-1.zookeeper-service:2888:3888"
+        # - name: ZOOKEEPER_SERVER_3
+        #   value: "zookeeper-2.zookeeper:2888:3888"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "0.5"
+        ports:
+        - containerPort: 2181
+          name: client
+        - containerPort: 2888
+          name: server
+        - containerPort: 3888
+          name: leader-election
+        # readinessProbe:  # TODO: not working on the used image
+        #   exec:
+        #     command:
+        #     - sh
+        #     - -c
+        #     - "zookeeper-ready 2181"
+        #   initialDelaySeconds: 10
+        #   timeoutSeconds: 5
+        # livenessProbe:
+        #   exec:
+        #     command:
+        #     - sh
+        #     - -c
+        #     - "zookeeper-ready 2181"
+        #   initialDelaySeconds: 10
+        #   timeoutSeconds: 5
+        volumeMounts:
+        - name: datadir
+          mountPath: /var/lib/zookeeper/data
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+  volumeClaimTemplates:
+  - metadata:
+      name: datadir
+    spec:
+      accessModes: [ "ReadWriteOnce" ]  # TODO: understand how select appropriate.
+      resources:
+        requests:
+          storage: "1Gi"
+        limits:
+          storage: "1Gi"
+
