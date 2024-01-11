@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sensors-service
+  namespace: kchernjak-338571
+  labels:
+    app: sensors
+spec:
+  selector:
+    app: sensors
+  clusterIP: "None"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sensors
+  namespace: kchernjak-338571
+  labels:
+    app: sensors
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sensors  # has to match .spec.template.metadata.labels
+  template:
+    metadata:
+      labels:
+        app: sensors  # has to match .spec.selector.matchLabels
+    spec:
+      containers:
+      - name: sensors
+        image:  kainrehck/advanced_db:sensor_data_generator_x86
+        imagePullPolicy: IfNotPresent
+        command: ["python3"]
+        args: ["data_generator.py"]
+        env:
+        - name: KAFKA_BROKERS
+          value: "kafka-connect-0.kafka-connect-service:9092"
+        - name: AGGREGATION_FREQUENCY
+          value: "1"
+        - name: N_SENSORS
+          value: "1000"
+        - name: TOPIC_NAME
+          value: "sensors_data"
+        - name: FAILURE_RATE
+          value: "0.05"
+        - name: RESPONSE_RATE
+          value: "0.8"
+        resources:
+          requests:
+            cpu: "1"
+            memory: "200Mi"
+          limits:
+            cpu: "1"
+            memory: "1Gi"
