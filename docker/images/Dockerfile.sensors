@@ -3,13 +3,6 @@ FROM python:3.9
 
 RUN apt-get update && apt-get install net-tools && apt autoremove
 
-# # Install data generator
-# RUN cd /root && \
-#     git clone https://github.com/ChernyakKonstantin/itmo_advanced_db.git && \
-#     cd itmo_advanced_db/data_generator && \
-#     git pull && \
-#     pip install -r requirements.txt 
-
-# # Make sh-script executable
-# RUN ["chmod", "+x", "root/itmo_advanced_db/data_generator/run.sh"]
-
+COPY data_generator/ /root/data_generator
+WORKDIR /root/data_generator
+RUN pip install -r requirements.txt
