@@ -1,8 +1,6 @@
 # Use the official Python base image
 FROM python:3.9
 
-RUN apt-get update && apt-get install net-tools && apt autoremove
-
 COPY data_generator/ /root/data_generator
 WORKDIR /root/data_generator
 RUN pip install -r requirements.txt
