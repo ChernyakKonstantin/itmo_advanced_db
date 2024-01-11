@@ -1,0 +1,190 @@
+version: "2"
+
+services:
+  zookeeper-0:
+    profiles: [zookeeper, all]
+    container_name: zookeeper-0
+    hostname: zookeeper-0
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      - ZOOKEEPER_CLIENT_PORT=2181
+      - ZOOKEEPER_TICK_TIME=2000
+    ports:
+      - "2181:2181"
+    networks:
+      - dev_network
+
+  kafka-0:
+    profiles: [kafka, all]
+    container_name: kafka-0
+    hostname: kafka-0
+    image: kainrehck/advanced_db:kafka-clickhouse-connector_x86
+    # links:
+    #   - zookeeper-0
+    #   - clickhouse-server-0
+    #   - clickhouse-server-1
+    #   - clickhouse-server-2
+    #   - clickhouse-server-3
+    environment:
+    # any environment variable beginning with KAFKA_CFG_ will be mapped to its corresponding Apache Kafka key.
+    #  For example, use KAFKA_CFG_BACKGROUND_THREADS in order to set background.threads
+      - KAFKA_CFG_NODE_ID=0
+      - ALLOW_PLAINTEXT_LISTENER=yes  # the listener will be without authentication and non-encrypted
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper-0:2181
+    networks:
+      - dev_network
+    ports:
+      - "9093:9093"
+      - "9092:9092"
+    volumes:
+      - ./clickhouse_cluster_sink_connector_config/clickhouse_sink_connector.properties:/opt/bitnami/kafka/config/clickhouse_sink_connector.properties
+
+  sensor_data_generator-0:
+    profiles: [sensors, all]
+    container_name: sensor_data_generator-0
+    hostname: sensor_data_generator-0
+    image: kainrehck/advanced_db:sensor_data_generator_x86
+    environment:
+      - KAFKA_BROKERS=kafka-0:9092
+      - AGGREGATION_FREQUENCY=1
+      - N_SENSORS=1000
+      - TOPIC_NAME=sensors_data
+      - FAILURE_RATE=0.05
+      - RESPONSE_RATE=0.8
+    networks:
+      - dev_network
+    entrypoint: python3 data_generator.py
+    # links:
+    #   - kafka-0
+
+  clickhouse-server-0:
+    profiles: [clickhouse, all]
+    container_name: clickhouse-server-0
+    hostname: clickhouse-server-0
+    image: clickhouse/clickhouse-server:23.11.2.11
+    volumes:
+      # Common for all clickhouse servers
+      - ./clickhouse_cluster_config/use-keeper.xml:/etc/clickhouse-server/conf.d/use-keeper.xml
+      - ./clickhouse_cluster_config/remote-servers.xml:/etc/clickhouse-server/conf.d/remote-servers.xml
+      - ./clickhouse_cluster_config/networking.xml:/etc/clickhouse-server/conf.d/networking.xml
+      - ./clickhouse_cluster_config/logging.xml:/etc/clickhouse-server/conf.d/logging.xml
+      # Custom for each clickhouse servers
+      - ./clickhouse_cluster_initialization:/docker-entrypoint-initdb.d  # Directory with database initialization scripts.
+      - /home/cherniak/itmo_advanced_db/ch_storage_0:/var/lib/clickhouse  # Clickhouse persistent storage.
+      - ./clickhouse_cluster_config/display_name-0.xml:/etc/clickhouse-server/conf.d/display_name.xml
+      - ./clickhouse_cluster_config/macros-0.xml:/etc/clickhouse-server/conf.d/macros.xml
+    # links:
+    #   - zookeeper-0
+    environment:
+      - CLICKHOUSE_PASSWORD=12345 # Change this to your desired password
+    # ports:
+    #   - "8123:8123" # HTTP port
+    #   - "9000:9000" # Native client port
+    #   - "9009:9009" # Native replication port
+    networks:
+      - dev_network
+
+  clickhouse-server-1:
+    profiles: [clickhouse, all]
+    container_name: clickhouse-server-1
+    hostname: clickhouse-server-1
+    image: clickhouse/clickhouse-server:23.11.2.11
+    volumes:
+      # Common for all clickhouse servers
+      - ./clickhouse_cluster_config/use-keeper.xml:/etc/clickhouse-server/conf.d/use-keeper.xml
+      - ./clickhouse_cluster_config/remote-servers.xml:/etc/clickhouse-server/conf.d/remote-servers.xml
+      - ./clickhouse_cluster_config/networking.xml:/etc/clickhouse-server/conf.d/networking.xml
+      - /./clickhouse_cluster_config/logging.xml:/etc/clickhouse-server/conf.d/logging.xml
+      # Custom for each clickhouse servers
+      # - ./clickhouse_cluster_initialization:/docker-entrypoint-initdb.d  # Directory with database initialization scripts.
+      - /home/cherniak/itmo_advanced_db/ch_storage_1:/var/lib/clickhouse  # Clickhouse persistent storage.
+      - ./clickhouse_cluster_config/display_name-1.xml:/etc/clickhouse-server/conf.d/display_name.xml
+      - ./clickhouse_cluster_config/macros-1.xml:/etc/clickhouse-server/conf.d/macros.xml
+    # links:
+    #   - zookeeper-0
+    environment:
+      - CLICKHOUSE_PASSWORD=12345 # Change this to your desired password
+    # ports:
+    #   - "8123:8123" # HTTP port
+    #   - "9000:9000" # Native client port
+    #   - "9009:9009" # Native replication port
+    networks:
+      - dev_network
+
+  clickhouse-server-2:
+    profiles: [clickhouse, all]
+    container_name: clickhouse-server-2
+    hostname: clickhouse-server-2
+    image: clickhouse/clickhouse-server:23.11.2.11
+    volumes:
+      # Common for all clickhouse servers
+      - ./clickhouse_cluster_config/use-keeper.xml:/etc/clickhouse-server/conf.d/use-keeper.xml
+      - ./clickhouse_cluster_config/remote-servers.xml:/etc/clickhouse-server/conf.d/remote-servers.xml
+      - ./clickhouse_cluster_config/networking.xml:/etc/clickhouse-server/conf.d/networking.xml
+      - ./clickhouse_cluster_config/logging.xml:/etc/clickhouse-server/conf.d/logging.xml
+      # Custom for each clickhouse servers
+      # - ./clickhouse_cluster_initialization:/docker-entrypoint-initdb.d  # Directory with database initialization scripts.
+      - /home/cherniak/itmo_advanced_db/ch_storage_2:/var/lib/clickhouse  # Clickhouse persistent storage.
+      - ./clickhouse_cluster_config/display_name-2.xml:/etc/clickhouse-server/conf.d/display_name.xml
+      - ./clickhouse_cluster_config/macros-2.xml:/etc/clickhouse-server/conf.d/macros.xml
+    # links:
+    #   - zookeeper-0
+    environment:
+      - CLICKHOUSE_PASSWORD=12345 # Change this to your desired password
+    # ports:
+    #   - "8123:8123" # HTTP port
+    #   - "9000:9000" # Native client port
+    #   - "9009:9009" # Native replication port
+    networks:
+      - dev_network
+
+  clickhouse-server-3:
+    profiles: [clickhouse, all]
+    container_name: clickhouse-server-3
+    hostname: clickhouse-server-3
+    image: clickhouse/clickhouse-server:23.11.2.11
+    volumes:
+      # Common for all clickhouse servers
+      - ./clickhouse_cluster_config/use-keeper.xml:/etc/clickhouse-server/conf.d/use-keeper.xml
+      - ./clickhouse_cluster_config/remote-servers.xml:/etc/clickhouse-server/conf.d/remote-servers.xml
+      - ./clickhouse_cluster_config/networking.xml:/etc/clickhouse-server/conf.d/networking.xml
+      - ./clickhouse_cluster_config/logging.xml:/etc/clickhouse-server/conf.d/logging.xml
+      # Custom for each clickhouse servers
+      # - ./clickhouse_cluster_initialization:/docker-entrypoint-initdb.d  # Directory with database initialization scripts.
+      - /home/cherniak/itmo_advanced_db/ch_storage_3:/var/lib/clickhouse  # Clickhouse persistent storage.
+      - ./clickhouse_cluster_config/display_name-3.xml:/etc/clickhouse-server/conf.d/display_name.xml
+      - ./clickhouse_cluster_config/macros-3.xml:/etc/clickhouse-server/conf.d/macros.xml
+    # links:
+    #   - zookeeper-0
+    environment:
+      - CLICKHOUSE_PASSWORD=12345 # Change this to your desired password
+    # ports:
+    #   - "8123:8123" # HTTP port
+    #   - "9000:9000" # Native client port
+    #   - "9009:9009" # Native replication port
+    networks:
+      - dev_network
+
+  lenses:
+    profiles: [lenses, all]
+    container_name: lenses
+    image: kainrehck/advanced_db:lenses_x86
+    environment:
+      - CLICKHOUSE_HOST=clickhouse-server-0
+    networks:
+      - dev_network
+    ports:
+      - "5432:5432"
+    entrypoint: flask --app lenses run --host 0.0.0.0 --port 5432 --no-debug
+
+networks:
+  dev_network:
+    driver: bridge
+
+# volumes:
+#   ch_storage_0:
+#   ch_storage_1:
+#   ch_storage_2:
+#   ch_storage_3:

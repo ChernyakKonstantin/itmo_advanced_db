@@ -1,0 +1,38 @@
+    <clickhouse>
+        <remote_servers replace="true">
+            <sensor_data_cluster_2S_2R>
+            <secret>mysecretphrase</secret>
+                <!-- shard 01 -->
+                <shard>
+                    <internal_replication>true</internal_replication>
+                    <!-- replica 01_01 -->
+                    <replica>
+                        <host>clickhouse-server-0</host>
+                        <port>9000</port>
+                    </replica>
+
+                    <!-- replica 01_02 -->
+                    <replica>
+                        <host>clickhouse-server-1</host>
+                        <port>9000</port>
+                    </replica>
+                </shard>
+
+                <!-- shard 02 -->
+                <shard>
+                    <internal_replication>true</internal_replication>
+                    <!-- replica 02_01 -->
+                    <replica>
+                        <host>clickhouse-server-2</host>
+                        <port>9000</port>
+                    </replica>
+
+                    <!-- replica 02_02 -->
+                    <replica>
+                        <host>clickhouse-server-3</host>
+                        <port>9000</port>
+                    </replica>
+                </shard>
+            </sensor_data_cluster_2S_2R>
+        </remote_servers>
+    </clickhouse>
