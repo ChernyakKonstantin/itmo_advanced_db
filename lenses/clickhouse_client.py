@@ -1,8 +1,12 @@
+import logging
 from datetime import datetime
 from typing import Dict, Tuple
 
 import clickhouse_connect
 import pandas as pd
+
+
+logging.basicConfig(level=logging.INFO)
 
 
 class ClickHouseClient:
@@ -22,10 +26,13 @@ class ClickHouseClient:
             query = (
                 f"SELECT timestamp, measurement FROM sensors_data "
                 f"WHERE sensor_id = {sensor_id} "
-                f"AND timestamp BETWEEN '{start_ts}' AND '{end_ts}'"
+                f"AND timestamp BETWEEN {start_ts.timestamp()} AND {end_ts.timestamp()} "
                 f"ORDER BY timestamp"
             )
+            logging.info(f"Query: {query}")
             df = self.client.query_df(query)
+            logging.info(f"Selected data: {df.shape}")
+            df["timestamp"] = df.timestamp.apply(datetime.fromtimestamp)
             result[sensor_id] = df
         return result
 
@@ -42,6 +49,6 @@ class ClickHouseClient:
 if __name__ == "__main__":
     with ClickHouseClient() as client:
         df = client.get_data(
-            (1,), datetime.fromisoformat("2023-11-10 23:30:00"), datetime.fromisoformat("2023-11-16 23:30:00")
+            (1,), datetime.fromisoformat("2024-01-11 14:15:10"), datetime.fromisoformat("2024-01-11 15:19:12")
         )
     print(df)
