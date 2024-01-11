@@ -1,0 +1,2 @@
+FROM confluentinc/cp-server-connect-base:7.5.3
+COPY docker/images/kafka/clickhouse-kafka-connect-v1.0.10-confluent.jar /usr/share/java
