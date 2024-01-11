@@ -119,7 +119,7 @@ class SensorAggregator:
 
     def send_data(self, timestamp: np.ndarray, sensor_id: np.ndarray, data: np.ndarray) -> None:
         for ts, s_id, d in zip(timestamp, sensor_id, data):
-            record = {"timestamp": str(datetime.datetime.fromtimestamp(ts)), "sensor_id": int(s_id), "measurement": d}
+            record = {"timestamp": ts, "sensor_id": int(s_id), "measurement": d}
             self.kafka_producer.send(self.topic_name, record)
         logging.info(f"Sent samples: {len(timestamp)}")
 
