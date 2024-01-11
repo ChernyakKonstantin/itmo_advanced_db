@@ -19,6 +19,7 @@ data:
     username=default
     password=12345
     topics=sensors_data
+    consumer.max.poll.records=10000
 
   run.sh: |
     #!/bin/bash
