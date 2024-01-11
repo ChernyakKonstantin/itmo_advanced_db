@@ -8,7 +8,7 @@ USE sensor_storage;
 CREATE TABLE IF NOT EXISTS sensors_data
 (
     sensor_id UInt32,
-    timestamp DateTime,
+    timestamp Float,
     measurement Float32
 )
 ENGINE = MergeTree

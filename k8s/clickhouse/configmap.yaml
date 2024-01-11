@@ -139,7 +139,7 @@ data:
     ON CLUSTER sensor_data_cluster_2S_2R
     (
         sensor_id UInt32,
-        timestamp DateTime,
+        timestamp Float,
         measurement Float32
     )
     ENGINE = ReplicatedMergeTree
