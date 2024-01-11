@@ -143,7 +143,7 @@ def main():
     topic_name = os.environ["TOPIC_NAME"]
     failure_rate = os.environ["FAILURE_RATE"]
     response_rate = os.environ["RESPONSE_RATE"]
-    aggregator = SensorAggregator(kafka_brokers, aggregation_frequency, n_sensors, topic_name)
+    aggregator = SensorAggregator(kafka_brokers, aggregation_frequency, n_sensors, topic_name, failure_rate, response_rate)
     aggregator.run()
 
 
