@@ -1,3 +1,0 @@
-FROM bitnami/kafka:latest
-
-COPY docker/images/kafka/clickhouse-kafka-connect-v1.0.10-confluent.jar  /opt/bitnami/kafka/libs
