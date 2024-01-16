@@ -6,11 +6,11 @@ CREATE TABLE IF NOT EXISTS sensor_storage.sensors_data_local
 ON CLUSTER sensor_data_cluster_2S_2R
 (
     sensor_id UInt32,
-    timestamp Float32,
+    timestamp DateTime64,
     measurement Float32
 )
 ENGINE = ReplicatedMergeTree('/clickhouse/tables/{shard}/sensors_data_local', '{replica}')
-ORDER BY (sensor_id, timestamp, measurement);
+ORDER BY (sensor_id, timestamp);
 
 -- Create distributed table
 CREATE TABLE IF NOT EXISTS sensor_storage.sensors_data
