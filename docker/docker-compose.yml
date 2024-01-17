@@ -188,6 +188,17 @@ services:
     - ./clickhouse-sink-connector-runner/run_connector.sh:/home/run_connector.sh
     entrypoint: sh /home/run_connector.sh
 
+  clickhouse-aggregator-0:
+    profiles: ["aggregate"]
+    container_name: clickhouse-aggregator-0
+    hostname: clickhouse-aggregator-0
+    image: kainrehck/advanced_db:clickhouse_aggregator_x86
+    environment:
+    - CLICKHOUSE_HOST=clickhouse-server-0
+    networks:
+    - dev_network
+    entrypoint: python3 aggregator.py
+
   sensor_data_generator-0:
     # depends_on:
     # - kafka-0

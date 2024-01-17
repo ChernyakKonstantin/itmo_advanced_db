@@ -1,0 +1,6 @@
+# Use the official Python base image
+FROM python:3.9
+
+COPY clickhouse_aggregator/ /root/clickhouse_aggregator
+WORKDIR /root/clickhouse_aggregator
+RUN pip install -r requirements.txt
