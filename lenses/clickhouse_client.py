@@ -5,7 +5,6 @@ from typing import Dict, Tuple
 import clickhouse_connect
 import pandas as pd
 
-
 logging.basicConfig(level=logging.INFO)
 
 
@@ -24,15 +23,14 @@ class ClickHouseClient:
         result = {}
         for sensor_id in sensors_ids:
             query = (
-                f"SELECT timestamp, measurement FROM sensors_data "
+                f"SELECT timestamp, measurement FROM sensor_storage.sensors_data_per_second "
                 f"WHERE sensor_id = {sensor_id} "
-                f"AND timestamp BETWEEN {start_ts.timestamp()} AND {end_ts.timestamp()} "
+                f"AND timestamp BETWEEN '{start_ts}' AND '{end_ts}' "
                 f"ORDER BY timestamp"
             )
             logging.info(f"Query: {query}")
             df = self.client.query_df(query)
             logging.info(f"Selected data: {df.shape}")
-            df["timestamp"] = df.timestamp.apply(datetime.fromtimestamp)
             result[sensor_id] = df
         return result
 

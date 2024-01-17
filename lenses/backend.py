@@ -1,10 +1,13 @@
 import io
+import logging
 from typing import Union
 
 from clickhouse_client import ClickHouseClient
 from drawer import PngDrawer
 from error_codes import BackendErrors
 from parsers import is_ts, parse_duration, parse_sensors, parse_ts
+
+logging.basicConfig(level=logging.INFO)
 
 
 class Backend:
@@ -16,12 +19,12 @@ class Backend:
         try:
             sensors = parse_sensors(sensors)
         except Exception as e:
-            print(e)  # TODO: Move to logging
+            logging.error(e)
             return BackendErrors.WRONG_SENSOR_LIST
         try:
             start = parse_ts(start)
         except Exception as e:
-            print(e)  # TODO: Move to logging
+            logging.error(e)
             return BackendErrors.WRONG_START_TIMESTAMP
         try:
             if is_ts(end_or_duration):
@@ -30,7 +33,7 @@ class Backend:
                 duration = parse_duration(end_or_duration)
                 end = parse_ts(start) + duration
         except Exception as e:
-            print(e)  # TODO: Move to logging
+            logging.error(e)
             return BackendErrors.WRONG_END_TIMESTAMP
         with ClickHouseClient(host=self.db_host) as clickhouse_client:  # TODO: Set correct data
             sensor_data = clickhouse_client.get_data(sensors, start, end)

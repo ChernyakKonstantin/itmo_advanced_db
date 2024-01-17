@@ -26,10 +26,3 @@ def parse_duration(duration: str) -> timedelta:
     hours = re.findall("\d+h", duration)
     if len(hours) > 0:
         return timedelta(hours=int(hours[0][:-1]))
-
-
-if __name__ == "__main__":
-    print(parse_sensors("1,2,30,4,5"))
-    print(is_ts("2023-1q-10 23:30:00"), is_ts("2023-11-10 23:30:00"))
-    print(parse_ts("2023-11-10 23:30:00"))
-    print(parse_duration("1h"), parse_duration("1m"), parse_duration("1s"))
