@@ -28,6 +28,19 @@ spec:
       labels:
         app: sensors  # has to match .spec.selector.matchLabels
     spec:
+      initContainers:
+      - name: start-clickhouse-sink-connector
+        image: alpine:latest
+        imagePullPolicy: IfNotPresent
+        command: ['sh', '/tmp/run_connector.sh']
+        env:
+        - name: KAFKA_CONNECT
+          value: kafka-connect-0.kafka-connect-service:8083
+        - name: CLICKHOUSE_HOST
+          value: clickhouse-server-0.clickhouse-server-service
+        volumeMounts:
+        - name: configs-source
+          mountPath: /tmp/
       containers:
       - name: sensors
         image:  kainrehck/advanced_db:sensor_data_generator_x86
@@ -54,3 +67,8 @@ spec:
           limits:
             cpu: "1"
             memory: "1Gi"
+      volumes:
+      - name:
+        configMap:
+          name: clickhouse-sink-connector-runner
+        

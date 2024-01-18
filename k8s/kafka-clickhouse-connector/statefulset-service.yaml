@@ -1,6 +1,5 @@
-# TODO: Need healthcheck that zookeeper and clickhouse are ready
-# TODO: Need command to start kafka connect
-# Configuration reference: https://github.com/bitnami/containers/blob/main/bitnami/kafka/README.md
+# TODO: Need healthcheck that kafka and clickhouse are ready
+# Based on: https://docs.confluent.io/platform/current/installation/docker/config-reference.html#kconnect-long-configuration
 apiVersion: v1
 kind: Service
 metadata:
@@ -8,17 +7,13 @@ metadata:
   namespace: kchernjak-338571
   labels:
     app: kafka-connect
-
 spec:
   selector:
     app: kafka-connect
   clusterIP: "None"
   ports:
   - name: http
-    port: 9092
-    protocol: TCP
-  - name: controller
-    port: 9093
+    port: 8083
     protocol: TCP
 ---
 apiVersion: apps/v1
@@ -28,7 +23,6 @@ metadata:
   namespace: kchernjak-338571
   labels:
     app: kafka-connect
-
 spec:
   serviceName: "kafka-connect"
   updateStrategy:
@@ -44,24 +38,37 @@ spec:
     spec:
       containers:
       - name: kafka-connect
-        image:  kainrehck/advanced_db:kafka-clickhouse-connector_x86
+        image: kainrehck/advanced_db:kafka-connect_x86
         imagePullPolicy: IfNotPresent
-        # command: ["bash"]
-        # args: ["/home/run.sh"]
         ports:
-        - containerPort: 9093
-        - containerPort: 9092
+        - containerPort: 8083
         env:
-        - name: KAFKA_CFG_ALLOW_PLAINTEXT_LISTENER
-          value: "yes"
-        - name: KAFKA_CFG_LISTENERS
-          value: "PLAINTEXT://:9092"
-        - name: KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP
-          value: "PLAINTEXT:PLAINTEXT"
-        - name: KAFKA_CFG_ZOOKEEPER_CONNECT
-          value: "zookeeper-0.zookeeper-service:2181"
-        - name: KAFKA_CFG_ZOOKEEPER_PROTOCOL
-          value: "PLAINTEXT"
+        - name: CONNECT_BOOTSTRAP_SERVERS
+          value: kafka-0.kafka-service:9092
+        - name: CONNECT_GROUP_ID
+          value: clickhouse-sink
+        - name: CONNECT_CONFIG_STORAGE_TOPIC
+          value: clickhouse-sink-config
+        - name: CONNECT_OFFSET_STORAGE_TOPIC
+          value: clickhouse-sink-offsets
+        - name: CONNECT_STATUS_STORAGE_TOPIC
+          value: clickhouse-sink-status
+        - name: CONNECT_KEY_CONVERTER
+          value: org.apache.kafka.connect.json.JsonConverter
+        - name: CONNECT_VALUE_CONVERTER
+          value: org.apache.kafka.connect.json.JsonConverter
+        - name: CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE
+          value: false
+        - name: CONNECT_REST_ADVERTISED_HOST_NAME
+          value: kafka-connect.kafka-connect-service  # TODO: maybe not correct
+        - name: CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR
+          value: 1
+        - name: CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR
+          value: 1
+        - name: CONNECT_STATUS_STORAGE_REPLICATION_FACTOR
+          value: 1
+        - name: CONNECT_PLUGIN_PATH
+          value: /usr/share/java
         resources:
           requests:
             cpu: "1"
@@ -69,26 +76,16 @@ spec:
           limits:
             cpu: "1"
             memory: "1Gi"
-        volumeMounts:
-        - name: logs
-          mountPath: /var/lib/kafka/data
-        - name: clickhouse-sink-connector-config
-          mountPath: /opt/bitnami/kafka/config/clickhouse_sink_connector.properties
-          subPath: clickhouse_sink_connector.properties
-        - name: clickhouse-sink-connector-config
-          mountPath: /home/run.sh
-          subPath: run.sh
-      volumes:
-        - name: clickhouse-sink-connector-config
-          configMap:
-            name: kafka-connect
-  volumeClaimTemplates:
-  - metadata:
-      name: logs
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      resources:
-        requests:
-          storage: "2Gi"
-        limits:
-          storage: "2Gi"
+        # volumeMounts:
+        # - name: logs
+        #   mountPath: /var/lib/kafka/data
+  # volumeClaimTemplates:
+  # - metadata:
+  #     name: logs
+  #   spec:
+  #     accessModes: [ "ReadWriteOnce" ]
+  #     resources:
+  #       requests:
+  #         storage: "2Gi"
+  #       limits:
+  #         storage: "2Gi"

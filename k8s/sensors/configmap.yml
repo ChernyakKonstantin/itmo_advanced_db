@@ -1,0 +1,36 @@
+# Based on https://habr.com/ru/companies/smi2/articles/317682/
+# Based on https://clickhouse.com/docs/en/architecture/replication
+# Based on https://github.com/BigKAA/youtube/blob/master/statefulSet%20pods%20individual%20configs/01-op-cm.yaml
+# Based on https://kb.altinity.com/altinity-kb-setup-and-maintenance/altinity-kb-server-config-files/
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clickhouse-sink-connector-runner
+  namespace: kchernjak-338571
+data:
+  conf.sh: |
+    #!bin/sh
+
+    echo 'Install curl'
+    apk --update add curl
+
+    echo
+
+    echo 'Run clickhouse sink connector'
+    curl -X PUT -H "content-Type:application/json" http://$KAFKA_CONNECT/connectors/clickhouse-connect/config -d \
+    '{
+        "connector.class": "com.clickhouse.kafka.connect.ClickHouseSinkConnector",
+        "ssl": "false",
+        "tasks.max": "1",
+        "value.converter.schemas.enable": "false",
+        "exactlyOnce": "true",
+        "database": "sensor_storage",
+        "hostname": "'$CLICKHOUSE_HOST'",
+        "port": "8123",
+        "username": "default",
+        "password": "12345",
+        "topics": "sensors_data",
+        "consumer.max.poll.records":"10000"
+    }'
+

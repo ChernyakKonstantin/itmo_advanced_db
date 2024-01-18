@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: aggregate_data_job
+spec:
+  schedule: "0 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: aggregate_data
+            image: kainrehck/advanced_db:clickhouse_aggregator_x86
+            imagePullPolicy: IfNotPresent
+            command: ["python3"]
+            args: ["aggregator.py"]
+            env:
+            - name: CLICKHOUSE_HOST
+              value: "clickhouse-server-0.clickhouse-server-service"  # Can I set non-headless service here to access any server?
+          startingDeadlineSeconds: 300 # Seconds

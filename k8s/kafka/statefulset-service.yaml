@@ -1,0 +1,80 @@
+# TODO: Need healthcheck that zookeeper and clickhouse are ready
+# TODO: Need command to start kafka connect
+# Configuration reference: https://github.com/bitnami/containers/blob/main/bitnami/kafka/README.md
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-service
+  namespace: kchernjak-338571
+  labels:
+    app: kafka
+spec:
+  selector:
+    app: kafka
+  clusterIP: "None"
+  ports:
+  - name: http
+    port: 9092
+    protocol: TCP
+  - name: controller
+    port: 9093
+    protocol: TCP
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka
+  namespace: kchernjak-338571
+  labels:
+    app: kafka
+spec:
+  serviceName: "kafka-service"
+  updateStrategy:
+    type: RollingUpdate
+  replicas: 1 # TODO: I want 2 or more
+  selector:
+    matchLabels:
+      app: kafka  # has to match .spec.template.metadata.labels
+  template:
+    metadata:
+      labels:
+        app: kafka  # has to match .spec.selector.matchLabels
+    spec:
+      containers:
+      - name: kafka
+        image:  bitnami/kafka:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9093
+        - containerPort: 9092
+        env:
+        - name: KAFKA_CFG_ALLOW_PLAINTEXT_LISTENER
+          value: "yes"
+        - name: KAFKA_CFG_LISTENERS
+          value: "PLAINTEXT://:9092"
+        - name: KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP
+          value: "PLAINTEXT:PLAINTEXT"
+        - name: KAFKA_CFG_ZOOKEEPER_CONNECT
+          value: "zookeeper-0.zookeeper-service:2181"
+        - name: KAFKA_CFG_ZOOKEEPER_PROTOCOL
+          value: "PLAINTEXT"
+        resources:
+          requests:
+            cpu: "1"
+            memory: "1Gi"
+          limits:
+            cpu: "1"
+            memory: "1Gi"
+        volumeMounts:
+        - name: logs
+          mountPath: /var/lib/kafka/data
+  volumeClaimTemplates:
+  - metadata:
+      name: logs
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: "2Gi"
+        limits:
+          storage: "2Gi"
