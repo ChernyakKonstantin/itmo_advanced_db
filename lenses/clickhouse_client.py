@@ -26,6 +26,7 @@ class ClickHouseClient:
                 f"SELECT timestamp, measurement FROM sensor_storage.sensors_data_per_second "
                 f"WHERE sensor_id = {sensor_id} "
                 f"AND timestamp BETWEEN '{start_ts}' AND '{end_ts}' "
+                f"WHERE sign = 1 "
                 f"ORDER BY timestamp"
             )
             logging.info(f"Query: {query}")
