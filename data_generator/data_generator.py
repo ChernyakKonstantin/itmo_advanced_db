@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 class SensorAggregator:
     def __init__(
         self,
-        kafka_servers: List[str],
+        kafka_servers: str,
         frequency: float = 3,
         n_sensors: int = 5,
         topic_name: Optional[str] = "sensors_data",
@@ -58,7 +58,7 @@ class SensorAggregator:
         self.send_later_data = np.array([])
 
         producer_config = {
-            "bootstrap.servers": "kafka-0:9092",
+            "bootstrap.servers": kafka_servers,
             'queue.buffering.max.messages': 2_000_000,
         }
         self.kafka_producer = Producer(producer_config)
@@ -144,7 +144,7 @@ class SensorAggregator:
 
 
 def main():
-    kafka_brokers = os.environ["KAFKA_BROKERS"].split(",")
+    kafka_brokers = os.environ["KAFKA_BROKERS"]
     aggregation_frequency = float(os.environ["AGGREGATION_FREQUENCY"])
     n_sensors = int(os.environ["N_SENSORS"])
     topic_name = os.environ["TOPIC_NAME"]
