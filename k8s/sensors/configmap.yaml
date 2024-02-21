@@ -9,7 +9,7 @@ metadata:
   name: clickhouse-sink-connector-runner
   namespace: kchernjak-338571
 data:
-  conf.sh: |
+  run_connector.sh: |
     #!bin/sh
 
     echo 'Install curl'
