@@ -28,11 +28,11 @@ services:
     environment:
     # Any environment variable beginning with KAFKA_CFG_ will be mapped to its corresponding Apache Kafka key.
     # For example, use KAFKA_CFG_BACKGROUND_THREADS in order to set background.threads
-    - KAFKA_CFG_NODE_ID=0
-    - ALLOW_PLAINTEXT_LISTENER=yes  # the listener will be without authentication and non-encrypted
+    - KAFKA_CFG_ALLOW_PLAINTEXT_LISTENER=yes  # the listener will be without authentication and non-encrypted
     - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
     - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT
     - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper-0:2181
+    - KAFKA_CFG_BROKER_ID=0
     # ports:
     # - "9093:9093"
     # - "9092:9092"
