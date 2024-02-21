@@ -4,9 +4,9 @@ import logging
 import os
 import time
 from typing import List, Optional, Tuple
-
+import time
 import numpy as np
-from kafka import KafkaProducer
+from confluent_kafka import Producer
 
 logging.basicConfig(level=logging.INFO)
 
@@ -57,11 +57,11 @@ class SensorAggregator:
         self.send_later_sensor_id = np.array([])
         self.send_later_data = np.array([])
 
-        self.kafka_producer = KafkaProducer(
-            bootstrap_servers=kafka_servers,
-            value_serializer=lambda x: json.dumps(x).encode("ascii"),
-            acks=1,
-        )
+        producer_config = {
+            "bootstrap.servers": "kafka-0:9092",
+            'queue.buffering.max.messages': 2_000_000,
+        }
+        self.kafka_producer = Producer(producer_config)
         logging.info("Started")
 
     def generate_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -120,9 +120,14 @@ class SensorAggregator:
         return datetime.datetime.fromtimestamp(timestamp).strftime("%F %T.%f")
 
     def send_data(self, timestamp: np.ndarray, sensor_id: np.ndarray, data: np.ndarray) -> None:
+        records = []
         for ts, s_id, d in zip(timestamp, sensor_id, data):
             record = {"timestamp": self.timestamp2datetime64str(ts), "sensor_id": int(s_id), "measurement": d}
-            self.kafka_producer.send(self.topic_name, record)
+            record = json.dumps(record).encode()
+            records.append(record)
+        for record in records:
+            self.kafka_producer.produce(self.topic_name, record)
+        self.kafka_producer.flush()
         logging.info(f"Sent samples: {len(timestamp)}")
 
     def run(self):
@@ -146,7 +151,12 @@ def main():
     failure_rate = float(os.environ["FAILURE_RATE"])
     response_rate = float(os.environ["RESPONSE_RATE"])
     aggregator = SensorAggregator(
-        kafka_brokers, aggregation_frequency, n_sensors, topic_name, failure_rate, response_rate
+        kafka_brokers,
+        aggregation_frequency,
+        n_sensors,
+        topic_name,
+        failure_rate,
+        response_rate,
     )
     aggregator.run()
 
