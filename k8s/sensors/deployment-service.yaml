@@ -30,7 +30,7 @@ spec:
     spec:
       initContainers:
       - name: start-clickhouse-sink-connector
-        image: alpine:latest
+        image: kainrehck/advanced_db:clickhouse_connector_runner_x86
         imagePullPolicy: IfNotPresent
         command: ['sh', '/tmp/run_connector.sh']
         env:

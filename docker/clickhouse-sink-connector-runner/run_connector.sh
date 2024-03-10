@@ -1,10 +1,5 @@
 #!bin/sh
 
-echo 'Install curl'
-apk --update add curl
-
-echo
-
 echo 'Run clickhouse sink connector'
 curl -X PUT -H "content-Type:application/json" http://$KAFKA_CONNECT/connectors/clickhouse-connect/config -d \
 '{

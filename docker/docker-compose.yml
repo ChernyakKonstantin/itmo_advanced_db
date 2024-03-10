@@ -178,7 +178,7 @@ services:
     profiles: [runner, all]
     container_name: clickhouse-sink-connector-runner-0
     hostname: clickhouse-sink-connector-runner-0
-    image: alpine:latest
+    image: kainrehck/advanced_db:clickhouse_connector_runner_x86
     environment:
     - KAFKA_CONNECT=kafka-connect-0:8083
     - CLICKHOUSE_HOST=clickhouse-server-0
