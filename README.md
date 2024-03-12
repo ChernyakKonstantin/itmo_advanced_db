@@ -43,6 +43,8 @@ Requirements:
 
 # Launch in k8s
 
+Due to abscent health-checks, project launch in manual.
+
 1. Launch `run.sh` in `k8s/zookeeper`. It starts Zookeeper.
 2. Launch `run.sh` in `k8s/clickhouse`. It starts ClickHouse.
 3. Launch `run.sh` in `k8s/kafka`. It start Kafka broker.
