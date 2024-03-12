@@ -3,21 +3,81 @@ import json
 import logging
 import os
 import time
-from typing import List, Optional, Tuple
-import time
+from typing import Optional, Tuple
+
+import clickhouse_connect
 import numpy as np
 from confluent_kafka import Producer
 
 logging.basicConfig(level=logging.INFO)
 
 
+def timestamp2datetime64(timestamp: float) -> datetime.datetime:
+    return datetime.datetime.fromtimestamp(timestamp)
+
+
+class ClickhouseSinkConnector:
+    def __init__(self, clickhouse_servers: str):
+        self.client = clickhouse_connect.get_client(
+            host=clickhouse_servers,
+            username="default",
+            password="12345",
+            database="sensor_storage",
+        )
+        self.table_name = "sensors_data"
+        self.column_names = [
+            "timestamp",
+            "sensor_id",
+            "measurement",
+        ]
+        self.column_types = [
+            clickhouse_connect.datatypes.temporal.DateTime64,
+            clickhouse_connect.datatypes.numeric.UInt32,
+            clickhouse_connect.datatypes.numeric.Float32,
+        ]
+        logging.info(f"Clickhouse bootstrap servers: {clickhouse_servers}")
+
+    def send_data(self, timestamp: np.ndarray, sensor_id: np.ndarray, measurement: np.ndarray):
+        self.client.insert(
+            table=self.table_name,
+            data=[timestamp, sensor_id, [timestamp2datetime64(m) for m in measurement]],
+            column_names=self.column_names,
+            column_types=self.column_types,
+            column_oriented=True,
+        )
+        logging.info(f"Sent samples: {len(timestamp)}")
+
+
+class KafkaSinkConnector:
+    def __init__(self, kafka_servers: str):
+        producer_config = {
+            "bootstrap.servers": kafka_servers,
+            "queue.buffering.max.messages": 2_000_000,
+            "connections.max.idle.ms": 540_000,
+            "retries": 1,
+        }
+        self.kafka_producer = Producer(producer_config)
+        self.topic_name = "sensors_data"
+        logging.info(f"Kafka bootstrap servers: {kafka_servers}")
+
+    def send_data(self, timestamp: np.ndarray, sensor_id: np.ndarray, measurement: np.ndarray):
+        records = []
+        for ts, s_id, meas in zip(timestamp, sensor_id, measurement):
+            record = {"timestamp": timestamp2datetime64(ts).strftime("%F %T.%f"), "sensor_id": int(s_id), "measurement": meas}
+            record = json.dumps(record).encode(encoding="ascii")
+            records.append(record)
+        for record in records:
+            self.kafka_producer.produce(self.topic_name, record, partition=0)
+        self.kafka_producer.flush()
+        logging.info(f"Sent samples: {len(timestamp)}")
+
+
 class SensorAggregator:
     def __init__(
         self,
-        kafka_servers: str,
+        sink_connector,
         frequency: float = 3,
         n_sensors: int = 5,
-        topic_name: Optional[str] = "sensors_data",
         failure_rate: Optional[float] = 0.05,
         response_rate: Optional[float] = 0.8,
     ):
@@ -25,29 +85,26 @@ class SensorAggregator:
 
         Parameters:
         -----------
+        :param: sink_connector: Kafka Producer or Clickhouse sink connector
         :param: frequency: Number of seconds between calling subscriber's method `receive` to send data.
         :type: float
         :param: n_sensors: Number of sensors to aggregate data from.
         :type: int
-        :param: topic_name: Kafka topic name to send data to.
-        :type: str
         :param: failure_rate: Probablilty for message to be delayed.
         :type: float
         :param: response_rate: Probablilty for delayed message to be sent.
         :type: float
         """
-        logging.info(f"Kafka bootstrap servers: {kafka_servers}")
         logging.info(f"Number os sensors: {n_sensors}")
         logging.info(f"Aggregating duration: {frequency}")
-        logging.info(f"Data topic: {topic_name}")
         logging.info(f"Failure rate: {failure_rate}")
         logging.info(f"Response rate: {response_rate}")
 
+        self.sink_connector = sink_connector
         self.start = datetime.datetime.now()
 
         self.frequency = frequency
         self.n_sensors = n_sensors
-        self.topic_name = topic_name
         self.failure_rate = failure_rate
         self.response_rate = response_rate
         self.n_samples = int(frequency * 1e3)
@@ -56,12 +113,6 @@ class SensorAggregator:
         self.send_later_timestamp = np.array([])
         self.send_later_sensor_id = np.array([])
         self.send_later_data = np.array([])
-
-        producer_config = {
-            "bootstrap.servers": kafka_servers,
-            'queue.buffering.max.messages': 2_000_000,
-        }
-        self.kafka_producer = Producer(producer_config)
         logging.info("Started")
 
     def generate_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -116,25 +167,11 @@ class SensorAggregator:
         send_data = np.hstack([send_data, delayed_data])
         return send_timestamp, send_sensor_id, send_data
 
-    def timestamp2datetime64str(self, timestamp: float) -> str:
-        return datetime.datetime.fromtimestamp(timestamp).strftime("%F %T.%f")
-
-    def send_data(self, timestamp: np.ndarray, sensor_id: np.ndarray, data: np.ndarray) -> None:
-        records = []
-        for ts, s_id, d in zip(timestamp, sensor_id, data):
-            record = {"timestamp": self.timestamp2datetime64str(ts), "sensor_id": int(s_id), "measurement": d}
-            record = json.dumps(record).encode()
-            records.append(record)
-        for record in records:
-            self.kafka_producer.produce(self.topic_name, record)
-        self.kafka_producer.flush()
-        logging.info(f"Sent samples: {len(timestamp)}")
-
     def run(self):
         while True:
             on_iteration_start_ts = time.time()
             timestamp, sensor_id, data = self.get_data()  # It takes ~ 0.05 seconds for 1k sensors of 1kHz.
-            self.send_data(timestamp, sensor_id, data)
+            self.sink_connector.send_data(timestamp, sensor_id, data)
             on_iteration_end_ts = time.time()
             iteration_duration = on_iteration_end_ts - on_iteration_start_ts
             logging.info(f"Iteration duration: {iteration_duration}")
@@ -144,17 +181,31 @@ class SensorAggregator:
 
 
 def main():
-    kafka_brokers = os.environ["KAFKA_BROKERS"]
+    try:
+        kafka_brokers = os.environ["KAFKA_BROKERS"]
+    except KeyError:
+        kafka_brokers = None
+    try:
+        clickhouse_servers = os.environ["CLICKHOUSE_SERVERS"]
+    except KeyError:
+        clickhouse_servers = None
+
     aggregation_frequency = float(os.environ["AGGREGATION_FREQUENCY"])
     n_sensors = int(os.environ["N_SENSORS"])
-    topic_name = os.environ["TOPIC_NAME"]
     failure_rate = float(os.environ["FAILURE_RATE"])
     response_rate = float(os.environ["RESPONSE_RATE"])
+
+    if kafka_brokers is not None:
+        sink_connector = KafkaSinkConnector(kafka_brokers)
+    elif clickhouse_servers is not None:
+        sink_connector = ClickhouseSinkConnector(clickhouse_servers)
+    else:
+        raise RuntimeError("No sink connector available")
+
     aggregator = SensorAggregator(
-        kafka_brokers,
+        sink_connector,
         aggregation_frequency,
         n_sensors,
-        topic_name,
         failure_rate,
         response_rate,
     )

@@ -42,8 +42,23 @@ spec:
         app: clickhouse-server  # has to match .spec.selector.matchLabels
     spec:
       initContainers:
+      # - name: clear-pv
+      #   image: node03.st:5000/kainrehck_busybox:latest  # busybox:1.33.0
+      #   imagePullPolicy: IfNotPresent
+      #   command: ["/bin/sh"]
+      #   args: ["-c", "cd /tmp; ls; echo; rm -rf *; ls; echo done"]
+      #   volumeMounts:
+      #   - name: clickhouse-server-storage
+      #     mountPath: /tmp/
+      #   resources:
+      #     requests:
+      #       memory: "100Mi"
+      #       cpu: "0.1"
+      #     limits:
+      #       memory: "100Mi"
+      #       cpu: "0.1"
       - name: init-configs
-        image: busybox:1.33.0
+        image: node03.st:5000/kainrehck_busybox:latest  # busybox:1.33.0
         imagePullPolicy: IfNotPresent
         command: ['sh', '/tmp/conf.sh']
         env:
@@ -58,9 +73,16 @@ spec:
           mountPath: /var/tmp/configs
         - name: database-initialization
           mountPath: /var/tmp/database-initialization
+        resources:
+          requests:
+            cpu: "0.1"
+            memory: "100Mi"
+          limits:
+            cpu: "0.1"
+            memory: "100Mi"
       containers:
       - name: clickhouse-server
-        image: clickhouse/clickhouse-server:23.11.2.11   # 23.11.2.11 version
+        image: node03.st:5000/kainrehck/clickhouse:latest  # clickhouse/clickhouse-server:23.11.2.11
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8123
@@ -74,10 +96,10 @@ spec:
         resources:
           requests:
             cpu: "1"
-            memory: "1Gi"
+            memory: "4Gi"
           limits:
             cpu: "1"
-            memory: "1Gi"
+            memory: "4Gi"
         volumeMounts:
         - name: configs-target
           mountPath: /etc/clickhouse-server/conf.d
@@ -100,6 +122,6 @@ spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
         requests:
-          storage: "2Gi"
+          storage: "40Gi"
         limits:
-          storage: "2Gi"
+          storage: "40Gi"

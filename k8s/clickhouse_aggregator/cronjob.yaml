@@ -1,20 +1,22 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: aggregate_data_job
+  name: aggregate-data-job
+  namespace: kchernjak-338571
 spec:
-  schedule: "0 * * * *"
+  schedule: "5 * * * *"
   jobTemplate:
     spec:
       template:
         spec:
+          restartPolicy: "OnFailure"
           containers:
-          - name: aggregate_data
-            image: kainrehck/advanced_db:clickhouse_aggregator_x86
+          - name: aggregate-data
+            image: node03.st:5000/kainrehck/clickhouse_aggregator_x86:latest  # kainrehck/advanced_db:clickhouse_aggregator_x86
             imagePullPolicy: IfNotPresent
             command: ["python3"]
             args: ["aggregator.py"]
             env:
             - name: CLICKHOUSE_HOST
               value: "clickhouse-server-0.clickhouse-server-service"  # Can I set non-headless service here to access any server?
-          startingDeadlineSeconds: 300 # Seconds
+          # startingDeadlineSeconds: 300 # Seconds

@@ -34,10 +34,26 @@ spec:
       labels:
         app: zookeeper
     spec:
+      # initContainers:
+      # - name: clear-pv
+      #   image: node03.st:5000/kainrehck_busybox:latest  # 1.33.0 version
+      #   imagePullPolicy: IfNotPresent
+      #   command: ["/bin/sh"]
+      #   args: ["-c", "cd /tmp; ls; echo; rm -rf *; ls; echo done"]
+      #   volumeMounts:
+      #   - name: datadir
+      #     mountPath: /tmp/
+      #   resources:
+      #     requests:
+      #       memory: "100Mi"
+      #       cpu: "0.1"
+      #     limits:
+      #       memory: "100Mi"
+      #       cpu: "0.1"
       containers:
       - name: kubernetes-zookeeper
         imagePullPolicy: IfNotPresent
-        image: confluentinc/cp-zookeeper:latest
+        image: node03.st:5000/kainrehck/cp-zookeeper:latest
         env:
         # - name: ZOOKEEPER_SERVER_ID
         #   value: "0"  # TODO: Need to be configureds as +1
@@ -59,8 +75,11 @@ spec:
         #   value: "zookeeper-2.zookeeper:2888:3888"
         resources:
           requests:
-            memory: "1Gi"
-            cpu: "0.5"
+            memory: "2Gi"
+            cpu: "1"
+          limits:
+            memory: "2Gi"
+            cpu: "1"
         ports:
         - containerPort: 2181
           name: client
@@ -68,22 +87,6 @@ spec:
           name: server
         - containerPort: 3888
           name: leader-election
-        # readinessProbe:  # TODO: not working on the used image
-        #   exec:
-        #     command:
-        #     - sh
-        #     - -c
-        #     - "zookeeper-ready 2181"
-        #   initialDelaySeconds: 10
-        #   timeoutSeconds: 5
-        # livenessProbe:
-        #   exec:
-        #     command:
-        #     - sh
-        #     - -c
-        #     - "zookeeper-ready 2181"
-        #   initialDelaySeconds: 10
-        #   timeoutSeconds: 5
         volumeMounts:
         - name: datadir
           mountPath: /var/lib/zookeeper/data
@@ -100,4 +103,3 @@ spec:
           storage: "1Gi"
         limits:
           storage: "1Gi"
-

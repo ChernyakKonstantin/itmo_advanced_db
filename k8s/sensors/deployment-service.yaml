@@ -17,7 +17,6 @@ metadata:
   namespace: kchernjak-338571
   labels:
     app: sensors
-
 spec:
   replicas: 1
   selector:
@@ -30,7 +29,7 @@ spec:
     spec:
       initContainers:
       - name: start-clickhouse-sink-connector
-        image: kainrehck/advanced_db:clickhouse_connector_runner_x86
+        image: node03.st:5000/kainrehck/clickhouse_connector_runner_x86:latest
         imagePullPolicy: IfNotPresent
         command: ['sh', '/tmp/run_connector.sh']
         env:
@@ -38,12 +37,19 @@ spec:
           value: kafka-connect-0.kafka-connect-service:8083
         - name: CLICKHOUSE_HOST
           value: clickhouse-server-0.clickhouse-server-service
+        resources:
+          requests:
+            cpu: "0.1"
+            memory: "100Mi"
+          limits:
+            cpu: "0.1"
+            memory: "100Mi"
         volumeMounts:
         - name: configs-source
           mountPath: /tmp/
       containers:
       - name: sensors
-        image:  kainrehck/advanced_db:sensor_data_generator_x86
+        image: node03.st:5000/kainrehck/sensor_data_generator_x86:latest
         imagePullPolicy: IfNotPresent
         command: ["python3"]
         args: ["data_generator.py"]
@@ -54,19 +60,17 @@ spec:
           value: "1"
         - name: N_SENSORS
           value: "1000"
-        - name: TOPIC_NAME
-          value: "sensors_data"
         - name: FAILURE_RATE
           value: "0.05"
         - name: RESPONSE_RATE
           value: "0.8"
         resources:
           requests:
-            cpu: "1"
-            memory: "200Mi"
+            cpu: "2"
+            memory: "4Gi"
           limits:
-            cpu: "1"
-            memory: "1Gi"
+            cpu: "2"
+            memory: "4Gi"
       volumes:
       - name: configs-source
         configMap:

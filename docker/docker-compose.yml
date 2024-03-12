@@ -207,7 +207,8 @@ services:
     hostname: sensor_data_generator-0
     image: kainrehck/advanced_db:sensor_data_generator_x86
     environment:
-    - KAFKA_BROKERS=kafka-0:9092
+    - CLICKHOUSE_SERVERS=clickhouse-server-0
+    # - KAFKA_BROKERS=kafka-0:9092
     - AGGREGATION_FREQUENCY=1
     - N_SENSORS=1000
     - TOPIC_NAME=sensors_data

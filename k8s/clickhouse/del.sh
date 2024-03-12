@@ -7,3 +7,7 @@ kubectl delete pvc/clickhouse-server-storage-clickhouse-server-2 --namespace kch
 kubectl delete pvc/clickhouse-server-storage-clickhouse-server-3 --namespace kchernjak-338571
 kubectl delete configmaps/clickhouse-server --namespace kchernjak-338571
 kubectl delete services/clickhouse-server-service --namespace kchernjak-338571
+# kubectl delete persistentvolume/clickhouse-server-0-pv
+# kubectl delete persistentvolume/clickhouse-server-1-pv
+# kubectl delete persistentvolume/clickhouse-server-2-pv
+# kubectl delete persistentvolume/clickhouse-server-3-pv

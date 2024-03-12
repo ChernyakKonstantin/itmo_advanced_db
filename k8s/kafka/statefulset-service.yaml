@@ -40,9 +40,25 @@ spec:
       labels:
         app: kafka  # has to match .spec.selector.matchLabels
     spec:
+      # initContainers:
+      # - name: clear-pv
+      #   image: node03.st:5000/kainrehck_busybox:latest  # busybox:1.33.0
+      #   imagePullPolicy: IfNotPresent
+      #   command: ["/bin/sh"]
+      #   args: ["-c", "cd /tmp; ls; echo; rm -rf *; ls; echo done"]
+      #   volumeMounts:
+      #   - name: logs
+      #     mountPath: /tmp/
+      #   resources:
+      #     requests:
+      #       memory: "100Mi"
+      #       cpu: "0.1"
+      #     limits:
+      #       memory: "100Mi"
+      #       cpu: "0.1"
       containers:
       - name: kafka
-        image:  bitnami/kafka:latest
+        image: node03.st:5000/kainrehck/kafka:latest  # bitnami/kafka:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9093
@@ -60,11 +76,11 @@ spec:
           value: "PLAINTEXT"
         resources:
           requests:
-            cpu: "1"
-            memory: "1Gi"
+            cpu: "2"
+            memory: "4Gi"
           limits:
-            cpu: "1"
-            memory: "1Gi"
+            cpu: "2"
+            memory: "4Gi"
         volumeMounts:
         - name: logs
           mountPath: /var/lib/kafka/data
@@ -75,6 +91,6 @@ spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
         requests:
-          storage: "2Gi"
+          storage: "20Gi"
         limits:
-          storage: "2Gi"
+          storage: "20Gi"

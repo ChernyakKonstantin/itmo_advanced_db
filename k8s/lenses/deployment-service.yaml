@@ -33,7 +33,7 @@ spec:
     spec:
       containers:
       - name: lenses
-        image: kainrehck/advanced_db:lenses_x86
+        image: node03.st:5000/kainrehck/lenses_x86:latest  # kainrehck/advanced_db:lenses_x86
         imagePullPolicy: IfNotPresent
         command: ["flask"]
         args: ["--app=lenses", "run", "--host=0.0.0.0", "--port=5432", "--no-debug"]

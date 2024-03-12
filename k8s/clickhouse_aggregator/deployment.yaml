@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: aggregate-data-job-service
+  namespace: kchernjak-338571
+  labels:
+    app: aggregate-data-job
+spec:
+  selector:
+    app: aggregate-data-job
+  clusterIP: "None"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aggregate-data-job
+  namespace: kchernjak-338571
+  labels:
+    app: aggregate-data-job
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aggregate-data-job  # has to match .spec.template.metadata.labels
+  template:
+    metadata:
+      labels:
+        app: aggregate-data-job  # has to match .spec.selector.matchLabels
+    spec:
+      containers:
+      - name: aggregate-data
+        image: node03.st:5000/kainrehck/clickhouse_aggregator_x86:latest  # kainrehck/advanced_db:clickhouse_aggregator_x86
+        imagePullPolicy: Always
+        command: ["python3"]
+        args: ["aggregator.py"]
+        env:
+        - name: CLICKHOUSE_HOST
+          value: "clickhouse-server-0.clickhouse-server-service"  # Can I set non-headless service here to access any server?
+        - name: PERIOD_SEC
+          value: "300"
+        resources:
+          requests:
+            cpu: "1"
+            memory: "1Gi"
+          limits:
+            cpu: "1"
+            memory: "1Gi"

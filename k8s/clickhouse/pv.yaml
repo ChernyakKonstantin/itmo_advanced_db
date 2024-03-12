@@ -1,0 +1,95 @@
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   name: clickhouse-server-0-pv
+#   namespace: kchernjak-338571
+#   labels:
+#     app: clickhouse-server
+# spec:
+#   capacity:
+#     storage: 10Gi
+#   volumeMode: Filesystem
+#   accessModes:
+#     - ReadWriteOnce
+#   # storageClassName: clickhouse-storage  # PVC must request this class.
+#   # nfs:
+#   #   path: /nfs_storage/home/kchernjak-338571/clickhouse-server-0  # TODO: will it work or I should create the folder somehow?
+#   #   server: 10.32.7.103
+#   hostPath:
+#     path: /nfs_storage/home/kchernjak-338571/clickhouse-server-0
+#     type: DirectoryOrCreate
+#   claimRef:
+#     name: clickhouse-server-storage-clickhouse-server-0
+#     namespace: kchernjak-338571
+# ---
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   name: clickhouse-server-1-pv
+#   namespace: kchernjak-338571
+#   labels:
+#     app: clickhouse-server
+# spec:
+#   capacity:
+#     storage: 10Gi
+#   volumeMode: Filesystem
+#   accessModes:
+#     - ReadWriteOnce
+#   # storageClassName: clickhouse-storage  # PVC must request this class.
+#   # nfs:
+#   #   path: /nfs_storage/home/kchernjak-338571/clickhouse-server-1  # TODO: will it work or I should create the folder somehow?
+#   #   server: host.minikube.internal:2049 #10.32.7.103
+#   hostPath:
+#     path: /nfs_storage/home/kchernjak-338571/clickhouse-server-1
+#     type: DirectoryOrCreate
+#   claimRef:
+#     name: clickhouse-server-storage-clickhouse-server-1
+#     namespace: kchernjak-338571
+# ---
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   name: clickhouse-server-2-pv
+#   namespace: kchernjak-338571
+#   labels:
+#     app: clickhouse-server
+# spec:
+#   capacity:
+#     storage: 10Gi
+#   volumeMode: Filesystem
+#   accessModes:
+#     - ReadWriteOnce
+#   # storageClassName: clickhouse-storage  # PVC must request this class.
+#   # nfs:
+#   #   path: /nfs_storage/home/kchernjak-338571/clickhouse-server-2  # TODO: will it work or I should create the folder somehow?
+#   #   server: 10.32.7.103
+#   hostPath:
+#     path: /nfs_storage/home/kchernjak-338571/clickhouse-server-2
+#     type: DirectoryOrCreate
+#   claimRef:
+#     name: clickhouse-server-storage-clickhouse-server-2
+#     namespace: kchernjak-338571
+# ---
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   name: clickhouse-server-3-pv
+#   namespace: kchernjak-338571
+#   labels:
+#     app: clickhouse-server
+# spec:
+#   capacity:
+#     storage: 10Gi
+#   volumeMode: Filesystem
+#   accessModes:
+#     - ReadWriteOnce
+#   # storageClassName: clickhouse-storage  # PVC must request this class.
+#   # nfs:
+#   #   path: /nfs_storage/home/kchernjak-338571/clickhouse-server-3  # TODO: will it work or I should create the folder somehow?
+#   #   server: 10.32.7.103
+#   hostPath:
+#     path: /nfs_storage/home/kchernjak-338571/clickhouse-server-3
+#     type: DirectoryOrCreate
+#   claimRef:
+#     name: clickhouse-server-storage-clickhouse-server-3
+#     namespace: kchernjak-338571

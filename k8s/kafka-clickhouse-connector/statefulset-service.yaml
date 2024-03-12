@@ -24,7 +24,7 @@ metadata:
   labels:
     app: kafka-connect
 spec:
-  serviceName: "kafka-connect"
+  serviceName: "kafka-connect-service"
   updateStrategy:
     type: RollingUpdate
   replicas: 1 # TODO: I want 2 or more
@@ -38,7 +38,7 @@ spec:
     spec:
       containers:
       - name: kafka-connect
-        image: kainrehck/advanced_db:kafka-connect_x86
+        image: node03.st:5000/kainrehck/kafka-connect_x86:latest  # kainrehck/advanced_db:kafka-connect_x86
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8083
@@ -58,34 +58,21 @@ spec:
         - name: CONNECT_VALUE_CONVERTER
           value: org.apache.kafka.connect.json.JsonConverter
         - name: CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE
-          value: false
+          value: "false"
         - name: CONNECT_REST_ADVERTISED_HOST_NAME
-          value: kafka-connect.kafka-connect-service  # TODO: maybe not correct
+          value: kafka-connect-0.kafka-connect-service  # TODO: maybe not correct
         - name: CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR
-          value: 1
+          value: "1"
         - name: CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR
-          value: 1
+          value: "1"
         - name: CONNECT_STATUS_STORAGE_REPLICATION_FACTOR
-          value: 1
+          value: "1"
         - name: CONNECT_PLUGIN_PATH
           value: /usr/share/java
         resources:
           requests:
-            cpu: "1"
-            memory: "1Gi"
+            cpu: "2"
+            memory: "4Gi"
           limits:
-            cpu: "1"
-            memory: "1Gi"
-        # volumeMounts:
-        # - name: logs
-        #   mountPath: /var/lib/kafka/data
-  # volumeClaimTemplates:
-  # - metadata:
-  #     name: logs
-  #   spec:
-  #     accessModes: [ "ReadWriteOnce" ]
-  #     resources:
-  #       requests:
-  #         storage: "2Gi"
-  #       limits:
-  #         storage: "2Gi"
+            cpu: "2"
+            memory: "4Gi"

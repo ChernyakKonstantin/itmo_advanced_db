@@ -19,3 +19,4 @@ docker push node03.st:5000/kainrehck/lenses_x86:latest
 docker push node03.st:5000/kainrehck/sensor_data_generator_x86:latest
 docker push node03.st:5000/kainrehck/cp-zookeeper:latest
 docker push node03.st:5000/kainrehck/clickhouse_connector_runner_x86:latest
+ 
