@@ -1,3 +1,6 @@
-/clickhouse_storage
 .DS_Store
-__pycache__
+**/__pycache__/
+ch_storage_0/
+ch_storage_1/
+ch_storage_2/
+ch_storage_3/

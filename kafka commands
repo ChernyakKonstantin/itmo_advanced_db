@@ -1,15 +1,15 @@
-# bin/connect-distributed.sh config/connect-distributed.properties 
+# bin/connect-distributed.sh config/connect-distributed.properties
 
 bin/connect-standalone.sh config/connect-standalone.properties config/clickhouse_sink_connector.properties
 
 
 # optional - check plugins available
-curl http://localhost:8083/connector-plugins 
+curl http://localhost:8083/connector-plugins
 
 # Configure connector
 curl -X POST -T /opt/bitnami/kafka/clickhouse_sink_connector_config.json http://localhost:8083/connectors --header "content-Type:application/json"
 
-echo '{"record_id": 2, "timestamp": "2023-11-06 10:30:00", "measurement": 23.45}' | bin/kafka-console-producer.sh --bootstrap-server 127.0.0.1:9092 --topic sensor_0
+echo '{"sensor_id": 2, "timestamp": "2023-11-06 10:30:00", "measurement": 23.45}' | bin/kafka-console-producer.sh --bootstrap-server 127.0.0.1:9092 --topic sensor_0
 echo '{"record_id": 2, "timestamp": "2023-11-06 10:30:00", "measurement": 23.45}' | bin/kafka-console-producer.sh --bootstrap-server 127.0.0.1:9092 --topic sensor_1
 
 
@@ -19,3 +19,38 @@ curl -X PUT -d "{}" localhost:8083/connector-plugins/ClickHouseSinkConnector/con
 curl -X GET http://localhost:8083/connectors/clickhouse-connect/status
 
 curl -X GET http://localhost:8083/connectors
+
+
+echo '{"sensor_id": [111, 10], "timestamp": [17.1, 9.0], "measurement": [23.45, 77.1]}' | bin/kafka-console-producer.sh --bootstrap-server 127.0.0.1:9092 --topic sensors_data
+
+bin/kafka-console-consumer.sh --bootstrap-server 127.0.0.1:9092 --topic sensors_data --from-beginning
+
+
+curl -X PUT -H "content-Type:application/json" http://kafka-connect-0:8083/connectors/clickhouse-connect/config \
+-d '{
+"connector.class": "com.clickhouse.kafka.connect.ClickHouseSinkConnector",
+"ssl": "false",
+"tasks.max": "1",
+"value.converter.schemas.enable": "false",
+"exactlyOnce": "true",
+"database": "sensor_storage",
+"hostname": "clickhouse-server-0",
+"port": "8123",
+"username": "default",
+"password": "12345",
+"topics": "sensors_data",
+"consumer.max.poll.records":"10000"
+}'
+      # - CONNECT_ERRORS_RETRY_TIMEOUT=60
+
+
+
+curl -X GET http://kafka-connect-0:8083/connectors
+curl -X GET http://kafka-connect-0:8083/connectors/clickhouse-connect/status
+curl -X DELETE http://kafka-connect-0:8083/connectors/clickhouse-connect
+
+curl -X GET http://localhost:8083/connectors
+curl -X GET http://localhost:8083/connectors/clickhouse-connect/status
+curl -X GET http://kafka-connect-0.kafka-connect-service:8083/connectors
+
+curl -X DELETE http://localhost:8083/connectors/clickhouse-connect

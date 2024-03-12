@@ -18,7 +18,10 @@ class PngDrawer:
         fig = Figure()
         axis = fig.add_subplot(1, 1, 1)
         for sensor_id, (data) in sensor_data.items():
-            axis.plot(data["timestamp"], data["measurement"], label=f"Sensor {sensor_id}")
+            try:
+                axis.plot(data["timestamp"], data["measurement"], label=f"Sensor {sensor_id}")
+            except KeyError:
+                axis.plot([], [], label=f"Sensor {sensor_id}")
         axis.legend()
         axis.grid()
         axis.set_xlabel("Time")

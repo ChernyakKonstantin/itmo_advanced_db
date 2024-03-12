@@ -1,0 +1,7 @@
+    <clickhouse>
+        <macros>
+            <shard>02</shard>
+            <replica>01</replica>
+            <cluster>sensor_data_cluster_2S_2R</cluster>
+        </macros>
+    </clickhouse>

@@ -1,0 +1,18 @@
+    <clickhouse>
+        <keeper_map_path_prefix>/keeper_map_tables</keeper_map_path_prefix>
+        <zookeeper>
+            <!-- where are the ZK nodes -->
+            <node>
+                <host>zookeeper-0</host>
+                <port>2181</port>
+            </node>
+            <!-- <node>
+                <host>zookeeper-1</host>
+                <port>2181</port>
+            </node>
+            <node>
+                <host>zookeeper-2</host>
+                <port>2181</port>
+            </node> -->
+        </zookeeper>
+    </clickhouse>

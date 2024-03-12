@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sensors-service
+  namespace: kchernjak-338571
+  labels:
+    app: sensors
+spec:
+  selector:
+    app: sensors
+  clusterIP: "None"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sensors
+  namespace: kchernjak-338571
+  labels:
+    app: sensors
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sensors  # has to match .spec.template.metadata.labels
+  template:
+    metadata:
+      labels:
+        app: sensors  # has to match .spec.selector.matchLabels
+    spec:
+      initContainers:
+      - name: start-clickhouse-sink-connector
+        image: node03.st:5000/kainrehck/clickhouse_connector_runner_x86:latest
+        imagePullPolicy: IfNotPresent
+        command: ['sh', '/tmp/run_connector.sh']
+        env:
+        - name: KAFKA_CONNECT
+          value: kafka-connect-0.kafka-connect-service:8083
+        - name: CLICKHOUSE_HOST
+          value: clickhouse-server-0.clickhouse-server-service
+        resources:
+          requests:
+            cpu: "0.1"
+            memory: "100Mi"
+          limits:
+            cpu: "0.1"
+            memory: "100Mi"
+        volumeMounts:
+        - name: configs-source
+          mountPath: /tmp/
+      containers:
+      - name: sensors
+        image: node03.st:5000/kainrehck/sensor_data_generator_x86:latest
+        imagePullPolicy: IfNotPresent
+        command: ["python3"]
+        args: ["data_generator.py"]
+        env:
+        - name: KAFKA_BROKERS
+          value: "kafka-0.kafka-service:9092"
+        - name: AGGREGATION_FREQUENCY
+          value: "1"
+        - name: N_SENSORS
+          value: "1000"
+        - name: FAILURE_RATE
+          value: "0.05"
+        - name: RESPONSE_RATE
+          value: "0.8"
+        resources:
+          requests:
+            cpu: "2"
+            memory: "4Gi"
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+      volumes:
+      - name: configs-source
+        configMap:
+          name: clickhouse-sink-connector-runner

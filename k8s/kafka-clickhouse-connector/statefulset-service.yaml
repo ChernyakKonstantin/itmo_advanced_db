@@ -1,0 +1,78 @@
+# TODO: Need healthcheck that kafka and clickhouse are ready
+# Based on: https://docs.confluent.io/platform/current/installation/docker/config-reference.html#kconnect-long-configuration
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-connect-service
+  namespace: kchernjak-338571
+  labels:
+    app: kafka-connect
+spec:
+  selector:
+    app: kafka-connect
+  clusterIP: "None"
+  ports:
+  - name: http
+    port: 8083
+    protocol: TCP
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka-connect
+  namespace: kchernjak-338571
+  labels:
+    app: kafka-connect
+spec:
+  serviceName: "kafka-connect-service"
+  updateStrategy:
+    type: RollingUpdate
+  replicas: 1 # TODO: I want 2 or more
+  selector:
+    matchLabels:
+      app: kafka-connect  # has to match .spec.template.metadata.labels
+  template:
+    metadata:
+      labels:
+        app: kafka-connect  # has to match .spec.selector.matchLabels
+    spec:
+      containers:
+      - name: kafka-connect
+        image: node03.st:5000/kainrehck/kafka-connect_x86:latest  # kainrehck/advanced_db:kafka-connect_x86
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8083
+        env:
+        - name: CONNECT_BOOTSTRAP_SERVERS
+          value: kafka-0.kafka-service:9092
+        - name: CONNECT_GROUP_ID
+          value: clickhouse-sink
+        - name: CONNECT_CONFIG_STORAGE_TOPIC
+          value: clickhouse-sink-config
+        - name: CONNECT_OFFSET_STORAGE_TOPIC
+          value: clickhouse-sink-offsets
+        - name: CONNECT_STATUS_STORAGE_TOPIC
+          value: clickhouse-sink-status
+        - name: CONNECT_KEY_CONVERTER
+          value: org.apache.kafka.connect.json.JsonConverter
+        - name: CONNECT_VALUE_CONVERTER
+          value: org.apache.kafka.connect.json.JsonConverter
+        - name: CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE
+          value: "false"
+        - name: CONNECT_REST_ADVERTISED_HOST_NAME
+          value: kafka-connect-0.kafka-connect-service  # TODO: maybe not correct
+        - name: CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR
+          value: "1"
+        - name: CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR
+          value: "1"
+        - name: CONNECT_STATUS_STORAGE_REPLICATION_FACTOR
+          value: "1"
+        - name: CONNECT_PLUGIN_PATH
+          value: /usr/share/java
+        resources:
+          requests:
+            cpu: "2"
+            memory: "4Gi"
+          limits:
+            cpu: "2"
+            memory: "4Gi"

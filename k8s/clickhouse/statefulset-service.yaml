@@ -1,0 +1,127 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: clickhouse-server-service
+  namespace: kchernjak-338571
+  labels:
+    app: clickhouse-server
+spec:
+  selector:
+    app: clickhouse-server
+  clusterIP: "None"
+  ports:
+  - name: http
+    port: 8123
+    protocol: TCP
+  - name: client
+    port: 9000
+    protocol: TCP
+  - name: replication
+    port: 9009
+    protocol: TCP
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: clickhouse-server
+  namespace: kchernjak-338571
+  labels:
+    app: clickhouse-server
+
+spec:
+  updateStrategy:
+    type: RollingUpdate
+  serviceName: "clickhouse-server-service"
+  replicas: 4
+  selector:
+    matchLabels:
+      app: clickhouse-server  # has to match .spec.template.metadata.labels
+  template:
+    metadata:
+      labels:
+        app: clickhouse-server  # has to match .spec.selector.matchLabels
+    spec:
+      initContainers:
+      # - name: clear-pv
+      #   image: node03.st:5000/kainrehck_busybox:latest  # busybox:1.33.0
+      #   imagePullPolicy: IfNotPresent
+      #   command: ["/bin/sh"]
+      #   args: ["-c", "cd /tmp; ls; echo; rm -rf *; ls; echo done"]
+      #   volumeMounts:
+      #   - name: clickhouse-server-storage
+      #     mountPath: /tmp/
+      #   resources:
+      #     requests:
+      #       memory: "100Mi"
+      #       cpu: "0.1"
+      #     limits:
+      #       memory: "100Mi"
+      #       cpu: "0.1"
+      - name: init-configs
+        image: node03.st:5000/kainrehck_busybox:latest  # busybox:1.33.0
+        imagePullPolicy: IfNotPresent
+        command: ['sh', '/tmp/conf.sh']
+        env:
+        - name: POD
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        volumeMounts:
+        - name: configs-source
+          mountPath: /tmp/
+        - name: configs-target
+          mountPath: /var/tmp/configs
+        - name: database-initialization
+          mountPath: /var/tmp/database-initialization
+        resources:
+          requests:
+            cpu: "0.1"
+            memory: "100Mi"
+          limits:
+            cpu: "0.1"
+            memory: "100Mi"
+      containers:
+      - name: clickhouse-server
+        image: node03.st:5000/kainrehck/clickhouse:latest  # clickhouse/clickhouse-server:23.11.2.11
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8123
+        - containerPort: 9000
+        - containerPort: 9009
+        env:
+        - name: CLICKHOUSE_USER
+          value: "default"  # Change this to your desired username
+        - name: CLICKHOUSE_PASSWORD
+          value: "12345"  # Change this to your desired password
+        resources:
+          requests:
+            cpu: "1"
+            memory: "4Gi"
+          limits:
+            cpu: "1"
+            memory: "4Gi"
+        volumeMounts:
+        - name: configs-target
+          mountPath: /etc/clickhouse-server/conf.d
+        - name: database-initialization
+          mountPath: /docker-entrypoint-initdb.d
+        - name: clickhouse-server-storage
+          mountPath: /var/lib/clickhouse
+      volumes:
+      - name: configs-source
+        configMap:
+          name: clickhouse-server
+      - name: configs-target
+        emptyDir: {}
+      - name: database-initialization
+        emptyDir: {}
+  volumeClaimTemplates:
+  - metadata:
+      name: clickhouse-server-storage
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: "40Gi"
+        limits:
+          storage: "40Gi"
